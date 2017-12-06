@@ -4,7 +4,7 @@ Started following: https://imaginghub.com/projects/144-installing-opencv-3-on-ra
 
 sudo apt-get update
 sudo apt-get dist-upgrade
-sudo raspi-update
+sudo rpi-update
 
 sudo raspi-config
 
