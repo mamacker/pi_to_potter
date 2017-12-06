@@ -4,11 +4,15 @@ Started following: https://imaginghub.com/projects/144-installing-opencv-3-on-ra
 
 sudo apt-get update
 sudo apt-get dist-upgrade
+sudo reboot
+
 sudo rpi-update
+sudo reboot
 
-sudo raspi-config
+#Turn on camera, changed locale
+sudo raspi-config 
 
-
+#Copy and pasted these to the command line
 sudo apt-get install build-essential cmake pkg-config
 sudo apt-get install libavcodec-dev libavformat-dev libswscale-dev libv4l-dev
 sudo apt-get install libxvidcore-dev libx264-dev
