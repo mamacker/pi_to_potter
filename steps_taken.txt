@@ -49,3 +49,5 @@ cd ~
 python3
 import cv2
 cv2.__version__
+
+#These worked!
