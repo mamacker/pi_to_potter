@@ -1,0 +1,9 @@
+Created new rasbian OS disk with Full Desktop using PiBakery
+
+Started following: https://imaginghub.com/projects/144-installing-opencv-3-on-raspberry-pi-3#documentation
+
+sudo apt-get update
+sudo apt-get dist-upgrade
+sudo raspi-update
+
+sudo raspi-config
