@@ -37,7 +37,7 @@ print "Initializing point tracking"
 
 # Parameters
 lk_params = dict( winSize  = (25,25),
-                  maxLevel = 3,
+                  maxLevel = 4,
                   criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
 blur_params = (4,4)
 dilation_params = (5, 5)
@@ -110,9 +110,6 @@ dilate_kernel = np.ones(dilation_params, np.uint8)
 def ProcessImage():
     global dilate_kernel, clahe, frame_holder
     frame = frame_holder.copy()
-    #frame = vs.read()
-    #frame = imutils.resize(frame, width=400)
-    #cv2.flip(frame,1,frame)
     frame_gray = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
     th, frame_gray = cv2.threshold(frame_gray, 210, 255, cv2.THRESH_BINARY);
     frame_gray = GaussianBlur(frame_gray,(9,9),1.5)
