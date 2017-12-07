@@ -49,6 +49,7 @@ frame_holder = None
 # start capturing
 vs = PiVideoStream().start()
 time.sleep(2.0)
+run_request = True
 frame_holder = vs.read()
 print "About to start."
 
@@ -61,9 +62,9 @@ def FrameReader():
         frame_holder = frame
         time.sleep(.150);
 
-def Spell(spell):    
+def Spell(spell):
     #clear all checks
-    ig = [[0] for x in range(15)] 
+    ig = [[0] for x in range(15)]
     #Invoke IoT (or any other) actions here
     cv2.putText(mask, spell, (5, 25),cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255,0,0))
     if (spell=="Colovaria"):
@@ -81,7 +82,7 @@ def Spell(spell):
 	print "nox_pin ON"
 	print "incendio_pin OFF"
     print "CAST: %s" %spell
-    
+
 
 def IsGesture(a,b,c,d,i):
     #print "point: %s" % i
@@ -105,13 +106,13 @@ def IsGesture(a,b,c,d,i):
     elif "leftup" in astr:
         Spell("Incendio")    
     #print astr
-    
+
 dilate_kernel = np.ones(dilation_params, np.uint8)
 def ProcessImage():
     global dilate_kernel, clahe, frame_holder
     frame = frame_holder.copy()
     frame_gray = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
-    th, frame_gray = cv2.threshold(frame_gray, 210, 255, cv2.THRESH_BINARY);
+    th, frame_gray = cv2.threshold(frame_gray, 230, 255, cv2.THRESH_BINARY);
     frame_gray = GaussianBlur(frame_gray,(9,9),1.5)
     frame_gray = cv2.dilate(frame_gray, dilate_kernel, iterations=1)
 
@@ -120,25 +121,31 @@ def ProcessImage():
     return frame_gray, frame
 
 def FindWand():
-    global old_frame,old_gray,p0,mask,ig, active
+    global old_frame,old_gray,p0,mask,ig,run_request
     try:
+        last = time.time() 
         while True:
-            old_gray, old_frame = ProcessImage()
-            p0 = cv2.HoughCircles(old_gray,cv2.HOUGH_GRADIENT,3,50,param1=240,param2=8,minRadius=4,maxRadius=15)
-            if p0 is not None:
-                p0.shape = (p0.shape[1], 1, p0.shape[2])
-                p0 = p0[:,:,0:2] 
-                mask = np.zeros_like(old_frame)
-                ig = [[0] for x in range(20)]
+            now = time.time()
+            if now - last > 4 or run_request:
+                print "Running find..."
+                old_gray, old_frame = ProcessImage()
+                p0 = cv2.HoughCircles(old_gray,cv2.HOUGH_GRADIENT,3,50,param1=240,param2=8,minRadius=4,maxRadius=15)
+                if p0 is not None:
+                    p0.shape = (p0.shape[1], 1, p0.shape[2])
+                    p0 = p0[:,:,0:2] 
+                    mask = np.zeros_like(old_frame)
+                    ig = [[0] for x in range(20)]
+                last = time.time()
+                run_request = False
 
-            time.sleep(4)
+            time.sleep(.3)
     except:
         e = sys.exc_info()[1]
         print "Error: %s" % e 
         exit
 
 def TrackWand():
-        global old_frame,old_gray,p0,mask,color,ig,img,frame, active
+        global old_frame,old_gray,p0,mask,color,ig,img,frame, active, run_request
         print "Starting wand tracking..."
         try:
             color = (0,0,255)
@@ -154,8 +161,9 @@ def TrackWand():
             print "No points found"
 
 	# Create a mask image for drawing purposes
+        noPt = 0
 	while True:
-            try: 
+            try:
                 active = False
                 if p0 is not None:
                     active = True;
@@ -163,7 +171,14 @@ def TrackWand():
 
                     # calculate optical flow
                     if len(p0) > 0:
+                        print p0
                         p1, st, err = cv2.calcOpticalFlowPyrLK(old_gray, frame_gray, p0, None, **lk_params)
+                    else:
+                        print "No points"
+                        noPt = noPt + 1
+                        if noPt > 5:
+                            noPt = 0
+                            run_request = True
 
                     # Select good points
                     good_new = p1[st==1]
@@ -185,20 +200,22 @@ def TrackWand():
                     cv2.imshow("Raspberry Potter", img)
                 else:
                     cv2.imshow("Original", frame)
+                    run_request = True
+                    print "Doing nuthing..."
 
                 # Now update the previous frame and previous points
                 old_gray = frame_gray.copy()
                 p0 = good_new.reshape(-1,1,2)
             except IndexError:
                 print "Index error - Tracking"  
+                run_request = True
             except:
                 e = sys.exc_info()[0]
                 #print "Tracking Error: %s" % e 
             key = cv2.waitKey(10)
             if key in [27, ord('Q'), ord('q')]: # exit on ESC
                 cv2.destroyAllWindows()
-                #cam.release()  
-                break           
+                break
 
 try:
     t = Thread(target=FrameReader)
@@ -208,7 +225,6 @@ try:
 
     print "START incendio_pin ON and set switch off if video is running"
     TrackWand()
-finally:   
+finally:
     cv2.destroyAllWindows()
     vs.stop()
-    #cam.release()  
