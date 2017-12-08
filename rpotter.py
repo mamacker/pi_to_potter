@@ -104,7 +104,7 @@ def IsGesture(a,b,c,d,i):
     elif "leftdown" in astr:
         Spell("Colovaria")
     elif "leftup" in astr:
-        Spell("Incendio")    
+        Spell("Incendio")
     #print astr
 
 dilate_kernel = np.ones(dilation_params, np.uint8)
@@ -172,6 +172,7 @@ def TrackWand():
                     # calculate optical flow
                     if len(p0) > 0:
                         print p0
+                        noPt = 0
                         p1, st, err = cv2.calcOpticalFlowPyrLK(old_gray, frame_gray, p0, None, **lk_params)
                     else:
                         print "No points"
@@ -201,6 +202,7 @@ def TrackWand():
                 else:
                     cv2.imshow("Original", frame)
                     run_request = True
+                    time.sleep(.3)
                     print "Doing nuthing..."
 
                 # Now update the previous frame and previous points
