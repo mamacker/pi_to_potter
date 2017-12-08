@@ -45,6 +45,8 @@ make -j4
 sudo make install
 sudo ldconfig
 
+sudo pip install imutils
+
 cd ~
 python3
 import cv2
