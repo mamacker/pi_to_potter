@@ -37,7 +37,7 @@ print "Initializing point tracking"
 
 # Parameters
 lk_params = dict( winSize  = (25,25),
-                  maxLevel = 4,
+                  maxLevel = 7,
                   criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
 blur_params = (4,4)
 dilation_params = (5, 5)
@@ -60,7 +60,7 @@ def FrameReader():
         frame = imutils.resize(frame, width=400)
         cv2.flip(frame,1,frame)
         frame_holder = frame
-        time.sleep(.150);
+        time.sleep(.03);
 
 def Spell(spell):
     #clear all checks
@@ -107,17 +107,30 @@ def IsGesture(a,b,c,d,i):
         Spell("Incendio")
     #print astr
 
+def GetPoints(image):
+    #p0 = cv2.HoughCircles(image,cv2.HOUGH_GRADIENT,3,50,param1=240,param2=8,minRadius=2,maxRadius=15)
+
+    p0 = cv2.goodFeaturesToTrack(image, 5, .01, 30)
+    '''
+    if p0 is not None:
+        p0.shape = (p0.shape[1], 1, p0.shape[2])
+        p0 = p0[:,:,0:2] 
+    '''
+    return p0;
+
 dilate_kernel = np.ones(dilation_params, np.uint8)
 def ProcessImage():
     global dilate_kernel, clahe, frame_holder
     frame = frame_holder.copy()
     frame_gray = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
     th, frame_gray = cv2.threshold(frame_gray, 230, 255, cv2.THRESH_BINARY);
+    '''
     frame_gray = GaussianBlur(frame_gray,(9,9),1.5)
     frame_gray = cv2.dilate(frame_gray, dilate_kernel, iterations=1)
-
     clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
     frame_gray = clahe.apply(frame_gray)
+    '''
+
     return frame_gray, frame
 
 def FindWand():
@@ -129,10 +142,8 @@ def FindWand():
             if now - last > 4 or run_request:
                 print "Running find..."
                 old_gray, old_frame = ProcessImage()
-                p0 = cv2.HoughCircles(old_gray,cv2.HOUGH_GRADIENT,3,50,param1=240,param2=8,minRadius=4,maxRadius=15)
+                p0 = GetPoints(old_gray)
                 if p0 is not None:
-                    p0.shape = (p0.shape[1], 1, p0.shape[2])
-                    p0 = p0[:,:,0:2] 
                     mask = np.zeros_like(old_frame)
                     ig = [[0] for x in range(20)]
                 last = time.time()
@@ -152,10 +163,8 @@ def TrackWand():
             old_gray, old_frame = ProcessImage()
 
             # Take first frame and find circles in it
-            p0 = cv2.HoughCircles(old_gray,cv2.HOUGH_GRADIENT,3,50,param1=240,param2=8,minRadius=4,maxRadius=15)
+            p0 = GetPoints(old_gray)
             if p0 is not None:
-                p0.shape = (p0.shape[1], 1, p0.shape[2])
-                p0 = p0[:,:,0:2]
                 mask = np.zeros_like(old_frame)
         except:
             print "No points found"
@@ -168,6 +177,7 @@ def TrackWand():
                 if p0 is not None:
                     active = True;
                     frame_gray, frame = ProcessImage();
+                    cv2.imshow("Original", frame_gray)
 
                     # calculate optical flow
                     if len(p0) > 0:
@@ -175,9 +185,9 @@ def TrackWand():
                         noPt = 0
                         p1, st, err = cv2.calcOpticalFlowPyrLK(old_gray, frame_gray, p0, None, **lk_params)
                     else:
-                        print "No points"
                         noPt = noPt + 1
                         if noPt > 5:
+                            print "No points"
                             noPt = 0
                             run_request = True
 
