@@ -46,6 +46,8 @@ sudo make install
 sudo ldconfig
 
 sudo pip install imutils
+sudo pip install pytesseract
+sudo apt-get install tesseract-ocr
 
 cd ~
 python3
