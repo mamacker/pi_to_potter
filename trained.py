@@ -110,7 +110,8 @@ def CheckOcr(img):
 
 def FrameReader():
     global frame_holder
-    while True:
+    t = threading.currentThread()
+    while getattr(t, "do_run", True):
         frame = vs.read()
         frame = imutils.resize(frame, width=400)
         cv2.flip(frame,1,frame)
@@ -163,7 +164,8 @@ def FindWand():
     global old_frame,old_gray,p0,mask, line_mask, ig,run_request
     try:
         last = time.time() 
-        while True:
+        t = threading.currentThread()
+        while getattr(t, "do_run", True):
             now = time.time()
             if run_request:
                 old_gray, old_frame = ProcessImage()
@@ -180,8 +182,7 @@ def FindWand():
         None
     except:
         e = sys.exc_info()[1]
-        print "Error: %s" % e 
-        exit
+        #print "Error: %s" % e 
 
 def TrackWand():
         global old_frame,old_gray,p0,mask, line_mask, color,ig,frame, active, run_request
@@ -248,25 +249,34 @@ def TrackWand():
                 run_request = True
             except cv2.error as e:
                 None
+            except TypeError as e:
+                None
+            except KeyboardInterrupt as e:
+                raise e
             except:
                 None
                 #print sys.exc_info()
                 #print "Tracking Error: %s" % e 
-            key = cv2.waitKey(10)
-            if key in [27, ord('Q'), ord('q')]: # exit on ESC
-                cv2.destroyAllWindows()
-                break
 
 try:
     TrainOcr()
     t = Thread(target=FrameReader)
+    t.do_run = True
     t.start()
     find = Thread(target=FindWand)
+    find.do_run = True
     find.start()
 
     print "START incendio_pin ON and set switch off if video is running"
     time.sleep(2)
     TrackWand()
+except KeyboardInterrupt:
+    print("Shutting down...")
 finally:
+    t.do_run = False
+    find.do_run = False
+    t.join()
+    find.join()
     cv2.destroyAllWindows()
     vs.stop()
+    sys.exit(1)
