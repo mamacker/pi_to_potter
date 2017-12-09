@@ -47,9 +47,14 @@ sudo ldconfig
 
 sudo pip install imutils
 
+
 cd ~
 python3
 import cv2
 cv2.__version__
 
 #These worked!
+
+##################
+For OCR:
+http://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_ml/py_knn/py_knn_opencv/py_knn_opencv.html
