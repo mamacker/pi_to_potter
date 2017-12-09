@@ -9,6 +9,8 @@ import picamera
 import threading
 from threading import Thread
 import pytesseract
+from os import listdir
+from os.path import isfile, join, isdir
 
 import sys
 import math
@@ -39,38 +41,61 @@ frame = None
 print "About to start."
 
 knn = None
+nameLookup = {}
 
 def TrainOcr() :
-    global knn
-    img = cv2.imread('digits.png')
-    gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-    size = (20,20)
-    cells = [np.hsplit(row,100) for row in np.vsplit(gray,50)]
-    x = np.array(cells)
+    global knn, nameLookup
+    labelNames = []
+    labelIndexes = []
+    trainingSet = []
+    numPics = 0
+    dirCount = 0
+    mypath = "./Pictures/"
+    for d in listdir(mypath):
+        if isdir(join(mypath, d)):
+            nameLookup[dirCount] = d
+            dirCount = dirCount + 1
+            for f in listdir(join(mypath,d)):
+                if isfile(join(mypath,d,f)):
+                    labelNames.append(d)
+                    labelIndexes.append(dirCount-1)
+                    trainingSet.append(join(mypath,d,f));
+                    numPics = numPics + 1
 
-    # Now we prepare train_data and test_data.
-    train = x[:,:50].reshape(-1,400).astype(np.float32) # Size = (2500,400)
-    test = x[:,50:100].reshape(-1,400).astype(np.float32) # Size = (2500,400)
+    print "Training set..."
+    print trainingSet
 
-    # Create labels for train and test data
-    k = np.arange(10)
-    train_labels = np.repeat(k,250)[:,np.newaxis]
-    test_labels = train_labels.copy()
+    print "Labels..."
+    print labelNames
+
+    print "Indexes..."
+    print labelIndexes
+
+    print "Lookup..."
+    print nameLookup
+
+    samples = []
+    for i in range(0, numPics):
+        img = cv2.imread(trainingSet[i])
+        gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+        samples.append(gray);
+        npArray = np.array(samples)
+        shapedArray = npArray.reshape(-1,400).astype(np.float32);
 
     # Initiate kNN, train the data, then test it with test data for k=1
     knn = cv2.ml.KNearest_create()
-    knn.train(train,cv2.ml.ROW_SAMPLE, train_labels)
+    knn.train(shapedArray, cv2.ml.ROW_SAMPLE, np.array(labelIndexes))
 
 def CheckOcr(img):
-    global knn
+    global knn, nameLookup
     size = (20,20)
     test_gray = cv2.resize(img,size,interpolation=cv2.INTER_LINEAR)
     cv2.imwrite("Pictures/char" + str(time.time()) + ".png", test_gray)
     imgArr = np.array(test_gray).astype(np.float32)
     sample = imgArr.reshape(-1,400).astype(np.float32)
     ret,result,neighbours,dist = knn.findNearest(sample,k=5)
-
-    print ret
+    print "Match: " + nameLookup[ret]
+    print ret, result, neighbours
 
 def FrameReader():
     global frame_holder
@@ -210,7 +235,7 @@ def TrackWand():
                 run_request = True
             except:
                 None
-                #print sys.exc_info()
+                print sys.exc_info()
                 #print "Tracking Error: %s" % e 
             key = cv2.waitKey(10)
             if key in [27, ord('Q'), ord('q')]: # exit on ESC
