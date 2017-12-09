@@ -88,9 +88,9 @@ def TrainOcr() :
 
 def CheckOcr(img):
     global knn, nameLookup
-
     size = (20,20)
     test_gray = cv2.resize(img,size,interpolation=cv2.INTER_LINEAR)
+    cv2.imwrite("Pictures/char" + str(time.time()) + ".png", test_gray)
     imgArr = np.array(test_gray).astype(np.float32)
     sample = imgArr.reshape(-1,400).astype(np.float32)
     ret,result,neighbours,dist = knn.findNearest(sample,k=5)
@@ -195,18 +195,20 @@ def TrackWand():
                             continue
                     else:
                         noPt = noPt + 1
-                        if noPt > 10:
-                            try:
-                                im2, contours,hierarchy = cv2.findContours(line_mask.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
-                                cnt = contours[0]
-                                x,y,w,h = cv2.boundingRect(cnt)
-                                print "####################"
-                                crop = line_mask[y-10:y+h+10,x-30:x+w+30]
-                                CheckOcr(crop);
-                                print "-------------------"
-                            finally:
-                                noPt = 0
-                                run_request = True
+                        if noPt > 5:
+                            if noPt == 6:
+                                try:
+                                    im2, contours,hierarchy = cv2.findContours(line_mask.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
+                                    cnt = contours[0]
+                                    x,y,w,h = cv2.boundingRect(cnt)
+                                    print "####################"
+                                    crop = line_mask[y-10:y+h+10,x-30:x+w+30]
+                                    CheckOcr(crop);
+                                    print "-------------------"
+                                except:
+                                    None
+                            noPt = 0
+                            run_request = True
 
                     # Select good points
                     good_new = p1[st==1]
