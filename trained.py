@@ -106,6 +106,7 @@ def CheckOcr(img):
     ret,result,neighbours,dist = knn.findNearest(sample,k=5)
     print "Match: " + nameLookup[ret]
     print ret, result, neighbours
+    return nameLookup[ret]
 
 def FrameReader():
     global frame_holder
@@ -175,6 +176,8 @@ def FindWand():
                 last = time.time()
 
             time.sleep(.3)
+    except cv2.error as e:
+        None
     except:
         e = sys.exc_info()[1]
         print "Error: %s" % e 
@@ -210,10 +213,10 @@ def TrackWand():
                                 im2, contours,hierarchy = cv2.findContours(line_mask.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
                                 cnt = contours[0]
                                 x,y,w,h = cv2.boundingRect(cnt)
-                                print "####################"
                                 crop = line_mask[y-10:y+h+10,x-30:x+w+30]
-                                CheckOcr(crop);
-                                print "-------------------"
+                                result = CheckOcr(crop);
+                                cv2.putText(line_mask, result, (0,50), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255,255,255)) 
+                                print ""
                             finally:
                                 noPt = 0
                                 run_request = True
@@ -229,12 +232,12 @@ def TrackWand():
                         # only try to detect gesture on highly-rated points (below 10)
                         cv2.line(line_mask, (a,b),(c,d),(255,255,255), 10)
                         cv2.circle(frame,(a,b),5,color,-1)
-                        #cv2.putText(frame, str(i), (a,b), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,0,255)) 
 
-                    #img_mask = cv2.add(frame_gray,im2)
-                    cv2.imshow("Raspberry Potter", line_mask)
+                    if line_mask != None:
+                        cv2.imshow("Raspberry Potter", line_mask)
                 else:
-                    cv2.imshow("Original", frame)
+                    if frame != None:
+                        cv2.imshow("Original", frame)
                     run_request = True
                     time.sleep(.3)
 
@@ -242,11 +245,12 @@ def TrackWand():
                 old_gray = frame_gray.copy()
                 p0 = good_new.reshape(-1,1,2)
             except IndexError:
-                print "Index error - Tracking"  
                 run_request = True
+            except cv2.error as e:
+                None
             except:
                 None
-                print sys.exc_info()
+                #print sys.exc_info()
                 #print "Tracking Error: %s" % e 
             key = cv2.waitKey(10)
             if key in [27, ord('Q'), ord('q')]: # exit on ESC
