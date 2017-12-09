@@ -22,6 +22,12 @@ from imutils.video.pivideostream import PiVideoStream
 print "Initializing point tracking"
 
 
+parser = argparse.ArgumentParser(description='Cast some spells!  Recognize wand motions')
+parser.add_argument('--train', help='Causes wand movement images to be stored for training selection.', action="store_true")
+
+args = parser.parse_args()
+print(args.train)
+
 # Parameters
 lk_params = dict( winSize  = (25,25),
                   maxLevel = 7,
@@ -86,11 +92,15 @@ def TrainOcr() :
     knn = cv2.ml.KNearest_create()
     knn.train(shapedArray, cv2.ml.ROW_SAMPLE, np.array(labelIndexes))
 
+lastTrainer = None
 def CheckOcr(img):
-    global knn, nameLookup
+    global knn, nameLookup, args, lastTrainer
 
     size = (20,20)
     test_gray = cv2.resize(img,size,interpolation=cv2.INTER_LINEAR)
+    if args.train and img != lastTrainer:
+        cv2.imwrite("Pictures/char" + str(time.time()) + ".png", test_gray)
+        lastTrainer = img
     imgArr = np.array(test_gray).astype(np.float32)
     sample = imgArr.reshape(-1,400).astype(np.float32)
     ret,result,neighbours,dist = knn.findNearest(sample,k=5)
