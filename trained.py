@@ -21,7 +21,6 @@ from imutils.video.pivideostream import PiVideoStream
 
 print "Initializing point tracking"
 
-
 parser = argparse.ArgumentParser(description='Cast some spells!  Recognize wand motions')
 parser.add_argument('--train', help='Causes wand movement images to be stored for training selection.', action="store_true")
 
@@ -104,9 +103,12 @@ def CheckOcr(img):
     imgArr = np.array(test_gray).astype(np.float32)
     sample = imgArr.reshape(-1,400).astype(np.float32)
     ret,result,neighbours,dist = knn.findNearest(sample,k=5)
-    print "Match: " + nameLookup[ret]
     print ret, result, neighbours
-    return nameLookup[ret]
+    if nameLookup[ret] is not None:
+        print "Match: " + nameLookup[ret]
+        return nameLookup[ret]
+    else:
+        return "error"
 
 def FrameReader():
     global frame_holder
@@ -119,41 +121,41 @@ def FrameReader():
         time.sleep(.03);
 
 def Spell(spell):
-    #clear all checks
-    ig = [[0] for x in range(15)]
     #Invoke IoT (or any other) actions here
-    cv2.putText(mask, spell, (5, 25),cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255,0,0))
-    if (spell=="Colovaria"):
+    return
+    if (spell=="center"):
 	print "trinket_pin trigger"
-    elif (spell=="Incendio"):
+    elif (spell=="circle"):
 	print "switch_pin OFF"
 	print "nox_pin OFF"
 	print "incendio_pin ON"
-    elif (spell=="Lumos"):
+    elif (spell=="eight"):
 	print "switch_pin ON"
 	print "nox_pin OFF"
 	print "incendio_pin OFF"
-    elif (spell=="Nox"):
+    elif (spell=="left"):
 	print "switch_pin OFF"
 	print "nox_pin ON"
 	print "incendio_pin OFF"
+    elif (spell=="square"):
+        None
+    elif (spell=="swish"):
+        None
+    elif (spell=="tee"):
+        None
+    elif (spell=="triangle"):
+        None
+    elif (spell=="zee"):
+        None
     print "CAST: %s" %spell
 
 
 def GetPoints(image):
-    #p0 = cv2.HoughCircles(image,cv2.HOUGH_GRADIENT,3,50,param1=240,param2=8,minRadius=2,maxRadius=15)
-
     p0 = cv2.goodFeaturesToTrack(image, 5, .01, 30)
-    '''
-    if p0 is not None:
-        p0.shape = (p0.shape[1], 1, p0.shape[2])
-        p0 = p0[:,:,0:2] 
-    '''
     return p0;
 
-dilate_kernel = np.ones(dilation_params, np.uint8)
 def ProcessImage():
-    global dilate_kernel, clahe, frame_holder
+    global frame_holder
     frame = frame_holder.copy()
     frame_gray = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
     th, frame_gray = cv2.threshold(frame_gray, 230, 255, cv2.THRESH_BINARY);
@@ -161,9 +163,9 @@ def ProcessImage():
     return frame_gray, frame
 
 def FindWand():
-    global old_frame,old_gray,p0,mask, line_mask, ig,run_request
+    global old_frame,old_gray,p0,mask, line_mask, run_request
     try:
-        last = time.time() 
+        last = time.time()
         t = threading.currentThread()
         while getattr(t, "do_run", True):
             now = time.time()
@@ -173,7 +175,6 @@ def FindWand():
                 if p0 is not None:
                     mask = np.zeros_like(old_frame)
                     line_mask = np.zeros_like(old_gray)
-                    ig = [[0] for x in range(20)]
                     run_request = False
                 last = time.time()
 
@@ -185,7 +186,7 @@ def FindWand():
         #print "Error: %s" % e 
 
 def TrackWand():
-        global old_frame,old_gray,p0,mask, line_mask, color,ig,frame, active, run_request
+        global old_frame,old_gray,p0,mask, line_mask, color, frame, active, run_request
         print "Starting wand tracking..."
         color = (0,0,255)
 
@@ -200,10 +201,13 @@ def TrackWand():
                     cv2.imshow("Original", frame_gray)
 
                     # calculate optical flow
-                    if len(p0) > 0:
+                    newPoints = False
+                    if p0 is not None and len(p0) > 0:
                         noPt = 0
                         try:
-                            p1, st, err = cv2.calcOpticalFlowPyrLK(old_gray, frame_gray, p0, None, **lk_params)
+                            if old_gray is not None and frame_gray is not None:
+                                p1, st, err = cv2.calcOpticalFlowPyrLK(old_gray, frame_gray, p0, None, **lk_params)
+                                newPoints = True
                         except:
                             print "."
                             continue
@@ -217,27 +221,28 @@ def TrackWand():
                                 crop = line_mask[y-10:y+h+10,x-30:x+w+30]
                                 result = CheckOcr(crop);
                                 cv2.putText(line_mask, result, (0,50), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255,255,255)) 
+                                Spell(result)
+                                line_mask = np.zeros_like(line_mask)
                                 print ""
                             finally:
                                 noPt = 0
                                 run_request = True
 
-                    # Select good points
-                    good_new = p1[st==1]
-                    good_old = p0[st==1]
+                    if newPoints:
+                        # Select good points
+                        good_new = p1[st==1]
+                        good_old = p0[st==1]
 
-                    # draw the tracks
-                    for i,(new,old) in enumerate(zip(good_new,good_old)):
-                        a,b = new.ravel()
-                        c,d = old.ravel()
-                        # only try to detect gesture on highly-rated points (below 10)
-                        cv2.line(line_mask, (a,b),(c,d),(255,255,255), 10)
-                        cv2.circle(frame,(a,b),5,color,-1)
+                        # draw the tracks
+                        for i,(new,old) in enumerate(zip(good_new,good_old)):
+                            a,b = new.ravel()
+                            c,d = old.ravel()
+                            cv2.line(line_mask, (a,b),(c,d),(255,255,255), 10)
 
-                    if line_mask != None:
-                        cv2.imshow("Raspberry Potter", line_mask)
+                        if line_mask is not None:
+                            cv2.imshow("Raspberry Potter", line_mask)
                 else:
-                    if frame != None:
+                    if frame is not None:
                         cv2.imshow("Original", frame)
                     run_request = True
                     time.sleep(.3)
@@ -249,14 +254,22 @@ def TrackWand():
                 run_request = True
             except cv2.error as e:
                 None
+                #print sys.exc_info()
             except TypeError as e:
                 None
+                print "Type error."
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                print(exc_type, exc_tb.tb_lineno)
             except KeyboardInterrupt as e:
                 raise e
             except:
                 None
                 #print sys.exc_info()
                 #print "Tracking Error: %s" % e 
+            key = cv2.waitKey(10)
+            if key in [27, ord('Q'), ord('q')]: # exit on ESC
+                cv2.destroyAllWindows()
+                break
 
 try:
     TrainOcr()
