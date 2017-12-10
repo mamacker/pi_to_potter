@@ -24,8 +24,12 @@ print "Initializing point tracking"
 parser = argparse.ArgumentParser(description='Cast some spells!  Recognize wand motions')
 parser.add_argument('--train', help='Causes wand movement images to be stored for training selection.', action="store_true")
 
+parser.add_argument('--circles', help='Use circles to select wand location', action="store_true")
+
+
 args = parser.parse_args()
 print(args.train)
+print(args.circles)
 
 # Parameters
 lk_params = dict( winSize  = (25,25),
@@ -151,7 +155,14 @@ def Spell(spell):
 
 
 def GetPoints(image):
-    p0 = cv2.goodFeaturesToTrack(image, 5, .01, 30)
+    if args.circles is not True:
+        p0 = cv2.goodFeaturesToTrack(image, 5, .01, 30)
+    else:
+        p0 = cv2.HoughCircles(image,cv2.HOUGH_GRADIENT,3,50,param1=240,param2=8,minRadius=2,maxRadius=10)
+
+    if p0 is not None:
+        p0.shape = (p0.shape[1], 1, p0.shape[2])
+        p0 = p0[:,:,0:2] 
     return p0;
 
 def ProcessImage():
@@ -208,6 +219,8 @@ def TrackWand():
                             if old_gray is not None and frame_gray is not None:
                                 p1, st, err = cv2.calcOpticalFlowPyrLK(old_gray, frame_gray, p0, None, **lk_params)
                                 newPoints = True
+                        except cv2.error as e:
+                            None
                         except:
                             print "."
                             continue
