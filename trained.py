@@ -107,7 +107,7 @@ def CheckOcr(img):
     imgArr = np.array(test_gray).astype(np.float32)
     sample = imgArr.reshape(-1,400).astype(np.float32)
     ret,result,neighbours,dist = knn.findNearest(sample,k=5)
-    print ret, result, neighbours
+    print ret, result, neighbours, dist
     if nameLookup[ret] is not None:
         print "Match: " + nameLookup[ret]
         return nameLookup[ret]
@@ -160,9 +160,9 @@ def GetPoints(image):
     else:
         p0 = cv2.HoughCircles(image,cv2.HOUGH_GRADIENT,3,50,param1=240,param2=8,minRadius=2,maxRadius=10)
 
-    if p0 is not None:
-        p0.shape = (p0.shape[1], 1, p0.shape[2])
-        p0 = p0[:,:,0:2] 
+        if p0 is not None:
+            p0.shape = (p0.shape[1], 1, p0.shape[2])
+            p0 = p0[:,:,0:2] 
     return p0;
 
 def ProcessImage():
@@ -233,8 +233,10 @@ def TrackWand():
                                 x,y,w,h = cv2.boundingRect(cnt)
                                 crop = line_mask[y-10:y+h+10,x-30:x+w+30]
                                 result = CheckOcr(crop);
-                                cv2.putText(line_mask, result, (0,50), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255,255,255)) 
+                                cv2.putText(line_mask, result, (0,50), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255,255,255))
                                 Spell(result)
+                                if line_mask:
+                                    cv2.imshow("Raspberry Potter", line_mask)
                                 line_mask = np.zeros_like(line_mask)
                                 print ""
                             finally:
