@@ -18,7 +18,6 @@ import time
 
 import v4l2capture
 import select
-import imutils
 
 
 print "Initializing point tracking"
@@ -58,7 +57,6 @@ select.select((vs,),(),())
 
 image_data = vs.read_and_queue()
 frame_holder = cv2.imdecode(np.frombuffer(image_data, dtype=np.uint8), cv2.IMREAD_COLOR)
-#frame = imutils.resize(frame, width=400)
 cv2.flip(frame_holder,1,frame_holder)
 
 frame = None
@@ -136,7 +134,6 @@ def FrameReader():
         select.select((vs,),(),())
         image_data = vs.read_and_queue()
         frame = cv2.imdecode(np.frombuffer(image_data, dtype=np.uint8), cv2.IMREAD_COLOR)
-        #frame = imutils.resize(frame, width=400)
         cv2.flip(frame,1,frame)
         frame_holder = frame
         time.sleep(.03);
@@ -187,7 +184,10 @@ def ProcessImage():
     global frame_holder
     frame = frame_holder.copy()
     frame_gray = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
-    th, frame_gray = cv2.threshold(frame_gray, 230, 255, cv2.THRESH_BINARY);
+    if args.circles is not True:
+        th, frame_gray = cv2.threshold(frame_gray, 230, 255, cv2.THRESH_BINARY);
+    else:
+        th, frame_gray = cv2.threshold(frame_gray, 200, 255, cv2.THRESH_BINARY);
 
     return frame_gray, frame
 

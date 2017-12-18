@@ -1,0 +1,75 @@
+# Instructions for using the v4l2 version of the camera APIs
+
+sudo modprobe bcm2835-v4l2
+sudo pip install v4l2
+sudo pip install v4l2capture
+
+v4l2-ctl --set-fmt-video=width=320,height=240,pixelformat=5
+v4l2-ctl --set-ctrl=compression_quality=8 #8 is my default
+v4l2-ctl --set-ctrl=scene_mode=11 #11=sports 8=night 0=none
+v4l2-ctl --set-ctrl=auto_exposure=0 #0=auto #1=manual
+v4l2-ctl --set-ctrl=exposure_time_absolute=1000 #1=fastest default=1000 
+v4l2-ctl --set-ctrl=iso_sensitivity=0
+v4l2-ctl --set-ctrl=rotate=0
+v4l2-ctl -p 20
+v4l2-ctl --set-ctrl=exposure_time_absolute=100 #1=fastest default=1000 
+
+//Then I messed with contrast, sharpness, and finally: brightness... I messed with brightness a lot.
+// Note that you can modify the brightness on the fly, while your program is running.
+python trained_v412.py
+====================================
+Resulting settings look like this (v4l2-ctl -l):
+
+
+User Controls
+
+                     brightness (int)    : min=0 max=100 step=1 default=50 value=40 flags=slider
+                       contrast (int)    : min=-100 max=100 step=1 default=0 value=100 flags=slider
+                     saturation (int)    : min=-100 max=100 step=1 default=0 value=-100 flags=slider
+                    red_balance (int)    : min=1 max=7999 step=1 default=1000 value=1000 flags=slider
+                   blue_balance (int)    : min=1 max=7999 step=1 default=1000 value=1000 flags=slider
+                horizontal_flip (bool)   : default=0 value=0
+                  vertical_flip (bool)   : default=0 value=0
+           power_line_frequency (menu)   : min=0 max=3 default=1 value=1
+                      sharpness (int)    : min=-100 max=100 step=1 default=0 value=100 flags=slider
+                  color_effects (menu)   : min=0 max=15 default=0 value=0
+                         rotate (int)    : min=0 max=360 step=90 default=0 value=0
+             color_effects_cbcr (int)    : min=0 max=65535 step=1 default=32896 value=32896
+
+Codec Controls
+
+             video_bitrate_mode (menu)   : min=0 max=1 default=0 value=0 flags=update
+                  video_bitrate (int)    : min=25000 max=25000000 step=25000 default=10000000 value=10000000
+         repeat_sequence_header (bool)   : default=0 value=0
+            h264_i_frame_period (int)    : min=0 max=2147483647 step=1 default=60 value=60
+                     h264_level (menu)   : min=0 max=11 default=11 value=11
+                   h264_profile (menu)   : min=0 max=4 default=4 value=4
+
+Camera Controls
+
+                  auto_exposure (menu)   : min=0 max=3 default=0 value=0
+         exposure_time_absolute (int)    : min=1 max=10000 step=1 default=1000 value=10000
+     exposure_dynamic_framerate (bool)   : default=0 value=0
+             auto_exposure_bias (intmenu): min=0 max=24 default=12 value=5
+      white_balance_auto_preset (menu)   : min=0 max=9 default=1 value=1
+            image_stabilization (bool)   : default=0 value=0
+                iso_sensitivity (intmenu): min=0 max=4 default=0 value=0
+           iso_sensitivity_auto (menu)   : min=0 max=1 default=1 value=1
+         exposure_metering_mode (menu)   : min=0 max=2 default=0 value=0
+                     scene_mode (menu)   : min=0 max=13 default=0 value=11
+
+JPEG Compression Controls
+
+            compression_quality (int)    : min=1 max=100 step=1 default=30 value=100
+                     brightness (int)    : min=0 max=100 step=1 default=50 value=40 flags=slider
+                       contrast (int)    : min=-100 max=100 step=1 default=0 value=100 flags=slider
+                     saturation (int)    : min=-100 max=100 step=1 default=0 value=-100 flags=slider
+                    red_balance (int)    : min=1 max=7999 step=1 default=1000 value=1000 flags=slider
+                   blue_balance (int)    : min=1 max=7999 step=1 default=1000 value=1000 flags=slider
+                horizontal_flip (bool)   : default=0 value=0
+                  vertical_flip (bool)   : default=0 value=0
+           power_line_frequency (menu)   : min=0 max=3 default=1 value=1
+                      sharpness (int)    : min=-100 max=100 step=1 default=0 value=100 flags=slider
+                  color_effects (menu)   : min=0 max=15 default=0 value=0
+                         rotate (int)    : min=0 max=360 step=90 default=0 value=0
+             color_effects_cbcr (int)    : min=0 max=65535 step=1 default=32896 value=32896
