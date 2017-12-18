@@ -4,6 +4,7 @@ Works!
 ## The simplest way:
 - First create a fresh raspbian disk with the Desktop OS
 - Follow install instructions to get OpenCV 3.1
+  - Run through the instructions found in: steps_taken.txt
 - Download the git
 - run:
   - python trained.py
