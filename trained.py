@@ -8,7 +8,6 @@ from cv2 import *
 import picamera
 import threading
 from threading import Thread
-import pytesseract
 from os import listdir
 from os.path import isfile, join, isdir
 
