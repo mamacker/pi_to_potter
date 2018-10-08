@@ -8,6 +8,7 @@ from cv2 import *
 import picamera
 import threading
 from threading import Thread
+import os
 from os import listdir
 from os.path import isfile, join, isdir
 
@@ -58,7 +59,11 @@ def TrainOcr() :
     trainingSet = []
     numPics = 0
     dirCount = 0
-    mypath = "./Pictures/"
+    print "Getting script path."
+    scriptpath = os.path.realpath(__file__)
+    print "Script Path: " + scriptpath
+    mypath = os.path.dirname(scriptpath) + "/Pictures/"
+    print "Training directory:" + mypath
     for d in listdir(mypath):
         if isdir(join(mypath, d)):
             nameLookup[dirCount] = d
@@ -115,6 +120,7 @@ def CheckOcr(img):
 
 def FrameReader():
     global frame_holder
+    print "Starting frame holder..."
     t = threading.currentThread()
     while getattr(t, "do_run", True):
         frame = vs.read()
