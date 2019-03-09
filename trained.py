@@ -18,6 +18,7 @@ import time
 import imutils
 
 from imutils.video.pivideostream import PiVideoStream
+fgbg = cv2.bgsegm.createBackgroundSubtractorMOG(10, 2, .5, 0);
 
 print "Initializing point tracking"
 
@@ -124,9 +125,9 @@ def FrameReader():
     t = threading.currentThread()
     while getattr(t, "do_run", True):
         frame = vs.read()
-        frame = imutils.resize(frame, width=400)
-        cv2.flip(frame,1,frame)
-        frame_holder = frame
+        fmask = imutils.resize(frame, width=400)
+        cv2.flip(fmask,1,fmask)
+        frame_holder = fmask
         time.sleep(.03);
 
 def Spell(spell):
@@ -175,6 +176,7 @@ def ProcessImage():
     frame = frame_holder.copy()
     frame_gray = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
     th, frame_gray = cv2.threshold(frame_gray, 230, 255, cv2.THRESH_BINARY);
+    frame_gray = fgbg.apply(frame_gray);
 
     return frame_gray, frame
 
