@@ -1,8 +1,12 @@
 # pi_to_potter
-Works! 
+Want to recreate the Universal Studios Magical experience?  Try this out, in a couple of hours you can have your own magic wand.
 
-## The simplest way:
-- First create a fresh raspbian disk with the Desktop OS
+This uses machine learning, background subtraction and OpenCV all on a little raspberry pi.  Several people have now recreated the whole exerience using this tech.  It might even be better than the original, since *this* wand experience can be taught new tricks. ;)
+
+See the whole build, tips, tricks and comments at: https://bloggerbrothers.com/2017/12/09/turn-on-a-lamp-with-a-gesture-ir-cam-image-processing/
+
+## The simplest way to get started:
+- Create a fresh raspbian disk with the Desktop OS
 - Follow install instructions to get OpenCV 3.1
   - Run through the instructions found in: steps_taken.txt
 - Download the git
