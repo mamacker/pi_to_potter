@@ -59,8 +59,8 @@ select.select((vs,),(),())
 
 yStart = 80;
 yEnd = 180;
-xStart = 20;
-xEnd = 180;
+xStart = 100;
+xEnd = 240;
 
 image_data = vs.read_and_queue()
 frame_holder = cv2.imdecode(np.frombuffer(image_data, dtype=np.uint8), cv2.IMREAD_COLOR)
