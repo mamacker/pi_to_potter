@@ -26,13 +26,18 @@ print "Initializing point tracking"
 
 parser = argparse.ArgumentParser(description='Cast some spells!  Recognize wand motions')
 parser.add_argument('--train', help='Causes wand movement images to be stored for training selection.', action="store_true")
-
 parser.add_argument('--circles', help='Use circles to select wand location', action="store_true")
+parser.add_argument('--setup', help='show camera view', action="store_true")
 
 
 args = parser.parse_args()
 print(args.train)
 print(args.circles)
+print(args.setup)
+
+# get the size of the screen
+width = 800
+height = 480
 
 # Parameters
 lk_params = dict( winSize  = (25,25),
@@ -83,7 +88,7 @@ def nearPoints(p1, p2, dist):
     print "Comparing: " + str(p1[0]) + " " + str(p1[1]) + " " + str(point2[0]) + " " + str(point2[1]) + " distance: " + str(distance);
     return distance < dist;
 
-def TrainOcr() :
+def TrainShapes() :
     global knn, nameLookup
     labelNames = []
     labelIndexes = []
@@ -127,7 +132,7 @@ def TrainOcr() :
     knn.train(shapedArray, cv2.ml.ROW_SAMPLE, np.array(labelIndexes))
 
 lastTrainer = None
-def CheckOcr(img):
+def CheckShape(img):
     global knn, nameLookup, args, lastTrainer
 
     size = (20,20)
@@ -312,6 +317,7 @@ def TrackWand():
                     frame_gray, frame = ProcessImage();
                     if frame is not None:
                         cv2.imshow("Gray", frame)
+                        cv2.moveWindow("Gray", 0, 0);
 
                     # calculate optical flow
                     newPoints = False
@@ -340,11 +346,14 @@ def TrackWand():
                                 cnt = contours[0]
                                 x,y,w,h = cv2.boundingRect(cnt)
                                 crop = line_mask[y-10:y+h+10,x-30:x+w+30]
-                                result = CheckOcr(crop);
+                                result = CheckShape(crop);
                                 cv2.putText(line_mask, result, (0,50), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255,255,255))
                                 Spell(result)
                                 if line_mask is not None:
-                                    cv2.imshow("Raspberry Potter", line_mask)
+                                    show_line_mask = line_mask;
+                                    if args.setup is not True:
+                                        show_line_mask = cv2.resize(line_mask, (width, height), interpolation = cv2.INTER_CUBIC)
+                                    cv2.imshow("Raspberry Potter", show_line_mask)
                                 line_mask = np.zeros_like(line_mask)
                                 print ""
                             finally:
@@ -363,7 +372,15 @@ def TrackWand():
                             cv2.line(line_mask, (a,b),(c,d),(255,255,255), 10)
 
                         if line_mask is not None:
-                            cv2.imshow("Raspberry Potter", line_mask)
+                            cv2.moveWindow("Raspberry Potter", 150,150);
+                            show_line_mask = line_mask;
+                            if args.setup is not True:
+                                cv2.namedWindow("Raspberry Potter", cv2.WND_PROP_FULLSCREEN)
+                                cv2.setWindowProperty("Raspberry Potter",cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
+                                show_line_mask = cv2.resize(line_mask, (width, height), interpolation = cv2.INTER_CUBIC)
+                            cv2.imshow("Raspberry Potter", show_line_mask)
+
+
                 else:
                     run_request = True
                     time.sleep(.3)
@@ -397,7 +414,7 @@ def TrackWand():
                 break
 
 try:
-    TrainOcr()
+    TrainShapes()
     t = Thread(target=FrameReader)
     t.do_run = True
     t.start()
