@@ -18,6 +18,9 @@ import time
 import v4l2capture
 import select
 
+import CameraLED
+camera = CameraLED.CameraLED()
+camera.off();
 
 print "Initializing point tracking"
 
@@ -177,26 +180,43 @@ def Spell(spell):
     print "CAST: %s" %spell
 
 point_aging = [];
-
 def trim_points():
-    print "Do something to age out points."
+    global point_aging
+    indexesToDelete = []
+    index = 0;
+    for old_point in point_aging:
+        if (time.time() - old_point["when"] > 15):
+            old_point["times_seen"] = old_point["times_seen"] - 1;
+            if old_point["times_seen"] <= 0:
+                indexesToDelete.append(index);
+                deleted = True;
+                break;
+        index += 1;
+
+    for i in reversed(indexesToDelete):
+        del point_aging[i];
 
 def GetPoints(image):
     global point_aging
-    p0 = None
-    if args.circles is not True:
-        p0 = cv2.goodFeaturesToTrack(image, 5, .01, 5)
+    #p0 = None
+    #if args.circles is not True:
+    '''
+    start_points = cv2.goodFeaturesToTrack(image, 5, .01, 5)
     else:
-        p0 = cv2.HoughCircles(image,cv2.HOUGH_GRADIENT,3,50,param1=240,param2=8,minRadius=2,maxRadius=10)
+    '''
+    start_points = cv2.HoughCircles(image,cv2.HOUGH_GRADIENT,3,50,param1=240,param2=8,minRadius=2,maxRadius=10)
 
-        if p0 is not None:
-            p0.shape = (p0.shape[1], 1, p0.shape[2])
-            p0 = p0[:,:,0:2] 
+    if start_points is not None:
+        start_points.shape = (start_points.shape[1], 1, start_points.shape[2])
+        start_points = start_points[:,:,0:2] 
+
+    # Clean out aged points.
+    trim_points();
 
     index = 0;
     indexesToDelete = [];
-    if (p0 is not None):
-        for point in p0:
+    if (start_points is not None):
+        for point in start_points:
             print "point: " + str(point);
             if len(point_aging) == 0:
                 point_aging.append({"x": point[0][0], "y":point[0][1], "times_seen": 0, "when":time.time()});
@@ -221,9 +241,9 @@ def GetPoints(image):
             index = index + 1;
 
     for i in reversed(indexesToDelete):
-        p0 = np.delete(p0, i, 0);
+        start_points = np.delete(start_points, i, 0);
 
-    return p0;
+    return start_points;
 
 def ProcessImage():
     global frame_holder
