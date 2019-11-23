@@ -57,8 +57,14 @@ time.sleep(2.0)
 run_request = True
 select.select((vs,),(),())
 
+yStart = 80;
+yEnd = 180;
+xStart = 20;
+xEnd = 180;
+
 image_data = vs.read_and_queue()
 frame_holder = cv2.imdecode(np.frombuffer(image_data, dtype=np.uint8), cv2.IMREAD_COLOR)
+frame_holder = frame_holder[yStart:yEnd, xStart:xEnd]
 cv2.flip(frame_holder,1,frame_holder)
 
 frame = None
@@ -145,7 +151,11 @@ def FrameReader():
     while getattr(t, "do_run", True):
         select.select((vs,),(),())
         image_data = vs.read_and_queue()
-        frame = cv2.imdecode(np.frombuffer(image_data, dtype=np.uint8), cv2.IMREAD_COLOR)
+        buf = np.frombuffer(image_data, dtype=np.uint8);
+
+        frame = cv2.imdecode(buf, cv2.IMREAD_COLOR)
+        frame = frame[yStart:yEnd, xStart:xEnd]
+
         cv2.flip(frame,1,frame)
         frame_holder = frame
         time.sleep(.03);
@@ -200,16 +210,16 @@ def GetPoints(image):
     global point_aging
     #p0 = None
     #if args.circles is not True:
-    '''
     start_points = cv2.goodFeaturesToTrack(image, 5, .01, 5)
-    else:
     '''
-    start_points = cv2.HoughCircles(image,cv2.HOUGH_GRADIENT,3,50,param1=240,param2=8,minRadius=2,maxRadius=10)
+    else:
+    start_points = cv2.HoughCircles(image,cv2.HOUGH_GRADIENT,3,50,param1=240,param2=8,minRadius=1,maxRadius=10)
 
     if start_points is not None:
         start_points.shape = (start_points.shape[1], 1, start_points.shape[2])
         start_points = start_points[:,:,0:2] 
 
+    '''
     # Clean out aged points.
     trim_points();
 
@@ -249,6 +259,7 @@ def ProcessImage():
     global frame_holder
     frame = frame_holder.copy()
     frame_gray = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
+    frame_gray = cv2.resize(frame_gray,(2*(xEnd - xStart), 2*(yEnd - yStart)), interpolation = cv2.INTER_CUBIC)
     if args.circles is not True:
         th, frame_gray = cv2.threshold(frame_gray, 230, 255, cv2.THRESH_BINARY);
     else:
@@ -366,13 +377,13 @@ def TrackWand():
                 run_request = True
             except cv2.error as e:
                 None
-                #print "Cv2 Error"
-                #print sys.exc_info()
+                print "Cv2 Error"
+                print sys.exc_info()
             except TypeError as e:
                 None
-                #print "Type error."
-                #exc_type, exc_obj, exc_tb = sys.exc_info()
-                #print(exc_type, exc_tb.tb_lineno)
+                print "Type error."
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                print(exc_type, exc_tb.tb_lineno)
             except KeyboardInterrupt as e:
                 raise e
             except:
