@@ -11,7 +11,7 @@ from threading import Thread
 from os import listdir
 from os.path import isfile, join, isdir
 
-import sys
+import sys, traceback
 import math
 import time
 
@@ -63,6 +63,16 @@ print "About to start."
 
 knn = None
 nameLookup = {}
+
+def nearPoints(p1, p2, dist):
+    point2 = p2;
+    if (p2["x"] != None):
+        point2[0] = p2["x"];
+        point2[1] = p2["y"];
+
+    distance = math.sqrt( ((p1[0]-point2[0])**2)+((p1[1]-point2[1])**2) )
+    print "Comparing: " + str(p1[0]) + " " + str(p1[1]) + " " + str(point2[0]) + " " + str(point2[1]) + " distance: " + str(distance);
+    return distance < dist;
 
 def TrainOcr() :
     global knn, nameLookup
@@ -166,17 +176,53 @@ def Spell(spell):
         None
     print "CAST: %s" %spell
 
+point_aging = [];
+
+def trim_points():
+    print "Do something to age out points."
 
 def GetPoints(image):
-    global p0
+    global point_aging
+    p0 = None
     if args.circles is not True:
-        p0 = cv2.goodFeaturesToTrack(image, 5, .01, 30)
+        p0 = cv2.goodFeaturesToTrack(image, 5, .01, 5)
     else:
         p0 = cv2.HoughCircles(image,cv2.HOUGH_GRADIENT,3,50,param1=240,param2=8,minRadius=2,maxRadius=10)
 
         if p0 is not None:
             p0.shape = (p0.shape[1], 1, p0.shape[2])
             p0 = p0[:,:,0:2] 
+
+    index = 0;
+    indexesToDelete = [];
+    if (p0 is not None):
+        for point in p0:
+            print "point: " + str(point);
+            if len(point_aging) == 0:
+                point_aging.append({"x": point[0][0], "y":point[0][1], "times_seen": 0, "when":time.time()});
+
+            found = False;
+            deleted = False;
+            for old_point in point_aging:
+                if nearPoints(point[0], old_point, 15):
+                    found = True;
+                    old_point["times_seen"] = old_point["times_seen"] + 1;
+                    old_point["when"] = time.time();
+                    if old_point["times_seen"] > 5:
+                        indexesToDelete.append(index);
+                        deleted = True;
+                        break;
+                    else:
+                        print "Times seen: " + str(old_point["times_seen"]) + " x: " + str(old_point["x"]) + " y: " + str(old_point["y"]);
+
+            if not found:
+                point_aging.append({"x": point[0][0], "y":point[0][1], "times_seen": 0, "when": time.time()});
+
+            index = index + 1;
+
+    for i in reversed(indexesToDelete):
+        p0 = np.delete(p0, i, 0);
+
     return p0;
 
 def ProcessImage():
@@ -210,11 +256,13 @@ def FindWand():
             time.sleep(.3)
     except cv2.error as e:
         None
-        #print "Err:"
-        #print e
+        print "Err:"
+        print e
     except:
-        e = sys.exc_info()[1]
-        #print "Error: %s" % e 
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        print "*** print_exception:"
+        traceback.print_exception(exc_type, exc_value, exc_traceback,
+                                  limit=2, file=sys.stdout)
 
 def TrackWand():
         global old_frame,old_gray,p0,mask, line_mask, color, active, run_request
@@ -245,8 +293,13 @@ def TrackWand():
                         except cv2.error as e:
                             None
                             print "cv err"
+                            print e
                         except:
                             print "."
+                            exc_type, exc_value, exc_traceback = sys.exc_info()
+                            print "*** print_exception:"
+                            traceback.print_exception(exc_type, exc_value, exc_traceback,
+                                                      limit=2, file=sys.stdout)
                             continue
                     else:
                         noPt = noPt + 1
@@ -304,8 +357,9 @@ def TrackWand():
                 raise e
             except:
                 None
-                #print sys.exc_info()
-                #print "Tracking Error: %s" % e 
+                print sys.exc_info()
+                print "Tracking Error: %s" % e 
+                print e
             key = cv2.waitKey(10)
             if key in [27, ord('Q'), ord('q')]: # exit on ESC
                 cv2.destroyAllWindows()
