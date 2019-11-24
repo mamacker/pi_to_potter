@@ -9,12 +9,12 @@ import picamera
 import threading
 from threading import Thread
 from os import listdir
+import os
 from os.path import isfile, join, isdir
-
+from gpiozero import LED
 import sys, traceback
 import math
 import time
-
 import v4l2capture
 import select
 
@@ -22,18 +22,30 @@ import CameraLED
 camera = CameraLED.CameraLED()
 camera.off();
 
+digitalLogger = LED(17)
+
 print "Initializing point tracking"
 
 parser = argparse.ArgumentParser(description='Cast some spells!  Recognize wand motions')
 parser.add_argument('--train', help='Causes wand movement images to be stored for training selection.', action="store_true")
-parser.add_argument('--circles', help='Use circles to select wand location', action="store_true")
 parser.add_argument('--setup', help='show camera view', action="store_true")
-
 
 args = parser.parse_args()
 print(args.train)
-print(args.circles)
 print(args.setup)
+
+# This code checks to see if we should start full screen or not.
+# If the file exists, we start in full screen.
+f = None
+try:
+    f = open("/home/pi/pi_to_potter/ready.txt")
+    # Do something with the file
+except IOError:
+    args.setup = True;
+    print("File not accessible")
+finally:
+    if (f is not None):
+        f.close()
 
 # get the size of the screen
 width = 800
@@ -168,21 +180,16 @@ def FrameReader():
 
 def Spell(spell):
     #Invoke IoT (or any other) actions here
-    return
     if (spell=="center"):
 	print "trinket_pin trigger"
     elif (spell=="circle"):
-	print "switch_pin OFF"
-	print "nox_pin OFF"
-	print "incendio_pin ON"
+	print "Playing audio file..."
+        os.system('mpg321 /home/pi/pi_to_potter/audio.mp3 &')
     elif (spell=="eight"):
-	print "switch_pin ON"
-	print "nox_pin OFF"
-	print "incendio_pin OFF"
+        digitalLogger.toggle();
+        None
     elif (spell=="left"):
-	print "switch_pin OFF"
-	print "nox_pin ON"
-	print "incendio_pin OFF"
+        None
     elif (spell=="square"):
         None
     elif (spell=="swish"):
@@ -214,16 +221,7 @@ def trim_points():
 
 def GetPoints(image):
     global point_aging
-    #p0 = None
-    #if args.circles is not True:
     start_points = cv2.goodFeaturesToTrack(image, maxCorners=5, qualityLevel=0.0001, minDistance=5)
-    '''
-    start_points = cv2.HoughCircles(image,cv2.HOUGH_GRADIENT,3,50,param1=240,param2=8,minRadius=1,maxRadius=10)
-
-    if start_points is not None:
-        start_points.shape = (start_points.shape[1], 1, start_points.shape[2])
-        start_points = start_points[:,:,0:2] 
-    '''
 
     # Clean out aged points.
     trim_points();
@@ -318,11 +316,11 @@ def TrackWand():
                     active = True;
                     frame_gray, frame = ProcessImage();
                     if frame is not None:
-                        cv2.imshow("fram_gray", frame_gray)
+                        cv2.imshow("frame_gray", frame_gray)
                         small = cv2.resize(frame, (120, 120), interpolation = cv2.INTER_CUBIC)
                         cv2.imshow("gray", small)
                         cv2.moveWindow("gray", 0, 0);
-                        cv2.moveWindow("fram_gray", 150, 0);
+                        cv2.moveWindow("frame_gray", 150, 30);
                     else:
                         print "No frame."
 
