@@ -17,7 +17,7 @@ import math
 import time
 import v4l2capture
 import select
-
+import requests
 import CameraLED
 camera = CameraLED.CameraLED()
 camera.off();
@@ -181,7 +181,7 @@ def FrameReader():
 def Spell(spell):
     #Invoke IoT (or any other) actions here
     if (spell=="center"):
-	print "trinket_pin trigger"
+        None
     elif (spell=="circle"):
 	print "Playing audio file..."
         os.system('mpg321 /home/pi/pi_to_potter/audio.mp3 &')
@@ -197,7 +197,9 @@ def Spell(spell):
     elif (spell=="tee"):
         None
     elif (spell=="triangle"):
-        None
+        print "Toggling outlet."
+        URL = "http://localhost:3000/device/t";
+        r = requests.get(url = URL);
     elif (spell=="zee"):
         None
     print "CAST: %s" %spell
@@ -285,8 +287,10 @@ def FindWand():
                     mask = np.zeros_like(old_frame)
                     line_mask = np.zeros_like(old_gray)
                     run_request = False
+                '''
                 else:
                     cv2.imwrite("nowand/char" + str(time.time()) + ".png", old_frame);
+                '''
                 last = time.time()
 
             time.sleep(.3)
@@ -411,8 +415,8 @@ def TrackWand():
                 run_request = True
             except cv2.error as e:
                 None
-                print "Cv2 Error"
-                print sys.exc_info()
+                #print "Cv2 Error"
+                #print sys.exc_info()
             except TypeError as e:
                 None
                 print "Type error."

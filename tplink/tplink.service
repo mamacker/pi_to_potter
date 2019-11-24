@@ -1,0 +1,15 @@
+[Unit]
+Description=Run forever tplink
+After=network-online.target multi-user.target
+
+[Service]
+WorkingDirectory=/home/pi/pi_to_potter/tplink
+User=pi
+ExecStart=/home/pi/.nvm/versions/node/v13.2.0/bin/node index.js
+RestartSec=5
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
+
