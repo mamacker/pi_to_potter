@@ -41,7 +41,7 @@ height = 480
 
 # Parameters
 lk_params = dict( winSize  = (25,25),
-                  maxLevel = 7,
+                  maxLevel = 10,
                   criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
 blur_params = (4,4)
 dilation_params = (5, 5)
@@ -56,16 +56,17 @@ vs = v4l2capture.Video_device("/dev/video0")
 vs.create_buffers(30)
 vs.queue_all_buffers()
 vs.start()
-p0 = None
+p0 = None #Points holder
+frameMissingPoints = 0 # Current number of frames without points. (After finding a few.)
 
 time.sleep(2.0)
 run_request = True
 select.select((vs,),(),())
 
-yStart = 80;
-yEnd = 180;
-xStart = 100;
-xEnd = 240;
+yStart = 90;
+yEnd = 170;
+xStart = 110;
+xEnd = 230;
 
 image_data = vs.read_and_queue()
 frame_holder = cv2.imdecode(np.frombuffer(image_data, dtype=np.uint8), cv2.IMREAD_COLOR)
@@ -136,7 +137,7 @@ def CheckShape(img):
     global knn, nameLookup, args, lastTrainer
 
     size = (20,20)
-    test_gray = cv2.resize(img,size,interpolation=cv2.INTER_LINEAR)
+    test_gray = cv2.resize(img,size,interpolation=cv2.INTER_CUBIC)
     if args.train and img != lastTrainer:
         cv2.imwrite("Pictures/char" + str(time.time()) + ".png", test_gray)
         lastTrainer = img
@@ -215,19 +216,18 @@ def GetPoints(image):
     global point_aging
     #p0 = None
     #if args.circles is not True:
-    start_points = cv2.goodFeaturesToTrack(image, 5, .01, 5)
+    start_points = cv2.goodFeaturesToTrack(image, maxCorners=5, qualityLevel=0.0001, minDistance=5)
     '''
-    else:
     start_points = cv2.HoughCircles(image,cv2.HOUGH_GRADIENT,3,50,param1=240,param2=8,minRadius=1,maxRadius=10)
 
     if start_points is not None:
         start_points.shape = (start_points.shape[1], 1, start_points.shape[2])
         start_points = start_points[:,:,0:2] 
-
     '''
+
     # Clean out aged points.
     trim_points();
-
+    return start_points;
     index = 0;
     indexesToDelete = [];
     if (start_points is not None):
@@ -260,15 +260,14 @@ def GetPoints(image):
 
     return start_points;
 
+kernel = np.ones((5,5),np.uint8)
 def ProcessImage():
     global frame_holder
     frame = frame_holder.copy()
     frame_gray = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
-    frame_gray = cv2.resize(frame_gray,(2*(xEnd - xStart), 2*(yEnd - yStart)), interpolation = cv2.INTER_CUBIC)
-    if args.circles is not True:
-        th, frame_gray = cv2.threshold(frame_gray, 230, 255, cv2.THRESH_BINARY);
-    else:
-        th, frame_gray = cv2.threshold(frame_gray, 200, 255, cv2.THRESH_BINARY);
+    frame_gray = cv2.resize(frame_gray,(5*(xEnd - xStart), 5*(yEnd - yStart)), interpolation = cv2.INTER_CUBIC)
+    th, frame_gray = cv2.threshold(frame_gray, 180, 255, cv2.THRESH_BINARY);
+    frame_gray = cv2.dilate(frame_gray, kernel, iterations = 3)
 
     return frame_gray, frame
 
@@ -284,9 +283,12 @@ def FindWand():
                 old_gray, old_frame = ProcessImage()
                 p0 = GetPoints(old_gray)
                 if p0 is not None:
+                    frameMissingPoints = 0;
                     mask = np.zeros_like(old_frame)
                     line_mask = np.zeros_like(old_gray)
                     run_request = False
+                else:
+                    cv2.imwrite("nowand/char" + str(time.time()) + ".png", old_frame);
                 last = time.time()
 
             time.sleep(.3)
@@ -301,7 +303,7 @@ def FindWand():
                                   limit=2, file=sys.stdout)
 
 def TrackWand():
-        global old_frame,old_gray,p0,mask, line_mask, color, active, run_request
+        global old_frame, old_gray, p0, mask, frameMissingPoints, line_mask, color, active, run_request
         print "Starting wand tracking..."
         color = (0,0,255)
         frame_gray = None
@@ -316,8 +318,13 @@ def TrackWand():
                     active = True;
                     frame_gray, frame = ProcessImage();
                     if frame is not None:
-                        cv2.imshow("Gray", frame)
-                        cv2.moveWindow("Gray", 0, 0);
+                        cv2.imshow("fram_gray", frame_gray)
+                        small = cv2.resize(frame, (120, 120), interpolation = cv2.INTER_CUBIC)
+                        cv2.imshow("gray", small)
+                        cv2.moveWindow("gray", 0, 0);
+                        cv2.moveWindow("fram_gray", 150, 0);
+                    else:
+                        print "No frame."
 
                     # calculate optical flow
                     newPoints = False
@@ -350,7 +357,7 @@ def TrackWand():
                                 cv2.putText(line_mask, result, (0,50), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255,255,255))
                                 Spell(result)
                                 if line_mask is not None:
-                                    show_line_mask = line_mask;
+                                    show_line_mask = cv2.resize(line_mask, (120, 120), interpolation = cv2.INTER_CUBIC)
                                     if args.setup is not True:
                                         show_line_mask = cv2.resize(line_mask, (width, height), interpolation = cv2.INTER_CUBIC)
                                     cv2.imshow("Raspberry Potter", show_line_mask)
@@ -372,24 +379,36 @@ def TrackWand():
                             cv2.line(line_mask, (a,b),(c,d),(255,255,255), 10)
 
                         if line_mask is not None:
-                            cv2.moveWindow("Raspberry Potter", 150,150);
-                            show_line_mask = line_mask;
+                            cv2.moveWindow("Raspberry Potter", 0, 200);
+                            show_line_mask = cv2.resize(line_mask, (120, 120), interpolation = cv2.INTER_CUBIC)
                             if args.setup is not True:
                                 cv2.namedWindow("Raspberry Potter", cv2.WND_PROP_FULLSCREEN)
                                 cv2.setWindowProperty("Raspberry Potter",cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
                                 show_line_mask = cv2.resize(line_mask, (width, height), interpolation = cv2.INTER_CUBIC)
                             cv2.imshow("Raspberry Potter", show_line_mask)
 
+                        # Now update the previous frame and previous points
+                        if frame_gray is not None:
+                            old_gray = frame_gray.copy()
+                    else:
+                        # This frame didn't have any points... lets go a couple more
+                        # keep the old image( don't update it )
+                        frameMissingPoints += 1;
+                        if (frameMissingPoints >= 5 or p0 == None):
+                            # Now update the previous frame and previous points
+                            if frame_gray is not None:
+                                old_gray = frame_gray.copy()
+                            p0 = None;
+                        else:
+                            print "Chance: " + str(frameMissingPoints);
 
                 else:
                     run_request = True
                     time.sleep(.3)
 
-                # Now update the previous frame and previous points
-                if frame_gray is not None:
-                    old_gray = frame_gray.copy()
                 if good_new is not None:
                     p0 = good_new.reshape(-1,1,2)
+
             except IndexError:
                 run_request = True
             except cv2.error as e:

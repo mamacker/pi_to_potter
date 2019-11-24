@@ -11,4 +11,5 @@ v4l2-ctl --set-ctrl=rotate=0
 v4l2-ctl -p 20
 v4l2-ctl --set-ctrl=exposure_time_absolute=100 #1=fastest default=1000 
 
-DISPLAY=:0 python magicwand.py --setup
+DISPLAY=:0 python magicwand.py
+
