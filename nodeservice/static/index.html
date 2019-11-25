@@ -52,7 +52,7 @@
         div.style.top = "0px";
         div.style.left = "0px";
       }, 400);
-      const response = await fetch('http://hpmagic.local:8000/' + div.getAttribute("id"));
+      const response = await fetch('http://' + window.location.hostname + ':8000/' + div.getAttribute("id"));
       const myJson = await response.json();
       console.log(JSON.stringify(myJson));
     }
