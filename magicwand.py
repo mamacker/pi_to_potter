@@ -10,6 +10,7 @@ import threading
 from threading import Thread
 from os import listdir
 import os
+import subprocess
 from os.path import isfile, join, isdir
 from gpiozero import LED
 import sys, traceback
@@ -283,8 +284,9 @@ def ProcessImage():
 
     return frame_gray, frame
 
+audioProcess = None;
 def FindWand():
-    global old_frame,old_gray,p0,mask, line_mask, run_request
+    global old_frame,old_gray,p0,mask, line_mask, run_request, audioProcess
     try:
         last = time.time()
         t = threading.currentThread()
@@ -299,6 +301,18 @@ def FindWand():
                     mask = np.zeros_like(old_frame)
                     line_mask = np.zeros_like(old_gray)
                     run_request = False
+                    if audioProcess is not None:
+                        audioProcess.kill();
+                    try:
+                        audioProcess = subprocess.Popen(["/usr/bin/aplay", '/home/pi/pi_to_potter/twinkle.wav']);
+                    except:
+                        if audioProcess is not None:
+                            audioProcess.kill();
+                            audioProcess = None
+                else:
+                    if audioProcess is not None:
+                        audioProcess.kill();
+                        audioProcess = None
                 '''
                 else:
                     cv2.imwrite("nowand/char" + str(time.time()) + ".png", old_frame);
