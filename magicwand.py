@@ -23,6 +23,7 @@ camera = CameraLED.CameraLED()
 camera.off();
 
 digitalLogger = LED(17)
+otherpin = LED(27)
 
 print "Initializing point tracking"
 
@@ -149,11 +150,17 @@ def CheckShape(img):
     global knn, nameLookup, args, lastTrainer
 
     size = (20,20)
-    test_gray = cv2.resize(img,size,interpolation=cv2.INTER_CUBIC)
+    try:
+        test_gray = cv2.resize(img,size,interpolation=cv2.INTER_CUBIC)
+    except:
+        return "error"
+
+
     if args.train and img != lastTrainer:
         cv2.imwrite("Pictures/char" + str(time.time()) + ".png", test_gray)
         lastTrainer = img
     imgArr = np.array(test_gray).astype(np.float32)
+
     sample = imgArr.reshape(-1,400).astype(np.float32)
     ret,result,neighbours,dist = knn.findNearest(sample,k=5)
     print ret, result, neighbours, dist
@@ -186,11 +193,14 @@ def Spell(spell):
 	print "Playing audio file..."
         os.system('mpg321 /home/pi/pi_to_potter/audio.mp3 &')
     elif (spell=="eight"):
+        print "Togging digital logger."
         digitalLogger.toggle();
         None
     elif (spell=="left"):
         None
     elif (spell=="square"):
+        print "Toggling 'other' pin."
+        otherpin.toggle();
         None
     elif (spell=="swish"):
         None
@@ -351,20 +361,26 @@ def TrackWand():
                         noPt = noPt + 1
                         if noPt > 10:
                             try:
-                                im2, contours,hierarchy = cv2.findContours(line_mask.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
-                                cnt = contours[0]
-                                x,y,w,h = cv2.boundingRect(cnt)
-                                crop = line_mask[y-10:y+h+10,x-30:x+w+30]
-                                result = CheckShape(crop);
-                                cv2.putText(line_mask, result, (0,50), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255,255,255))
-                                Spell(result)
-                                if line_mask is not None:
-                                    show_line_mask = cv2.resize(line_mask, (120, 120), interpolation = cv2.INTER_CUBIC)
-                                    if args.setup is not True:
-                                        show_line_mask = cv2.resize(line_mask, (width, height), interpolation = cv2.INTER_CUBIC)
-                                    cv2.imshow("Raspberry Potter", show_line_mask)
-                                line_mask = np.zeros_like(line_mask)
-                                print ""
+                                im2, contours, hierarchy = cv2.findContours(line_mask.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
+                                if (contours is not None and len(contours) > 0):
+                                    cnt = contours[0]
+                                    x,y,w,h = cv2.boundingRect(cnt)
+                                    crop = line_mask[y-10:y+h+10,x-30:x+w+30]
+                                    result = CheckShape(crop);
+                                    cv2.putText(line_mask, result, (0,50), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255,255,255))
+                                    Spell(result)
+                                    if line_mask is not None:
+                                        show_line_mask = cv2.resize(line_mask, (120, 120), interpolation = cv2.INTER_CUBIC)
+                                        if args.setup is not True:
+                                            show_line_mask = cv2.resize(line_mask, (width, height), interpolation = cv2.INTER_CUBIC)
+                                        cv2.imshow("Raspberry Potter", show_line_mask)
+                                    line_mask = np.zeros_like(line_mask)
+                                    print ""
+                            except:
+                                exc_type, exc_value, exc_traceback = sys.exc_info()
+                                print "FindSpell: *** print_exception:"
+                                traceback.print_exception(exc_type, exc_value, exc_traceback,
+                                                          limit=2, file=sys.stdout)
                             finally:
                                 noPt = 0
                                 run_request = True
