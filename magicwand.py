@@ -211,6 +211,8 @@ def Spell(spell):
         URL = "http://localhost:3000/device/t";
         r = requests.get(url = URL);
     elif (spell=="zee"):
+        print "Toggling 'other' pin."
+        otherpin.toggle();
         None
     print "CAST: %s" %spell
 
