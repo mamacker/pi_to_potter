@@ -19,6 +19,7 @@ import time
 import v4l2capture
 import select
 import requests
+from BaseHTTPServer import BaseHTTPRequestHandler,HTTPServer
 import CameraLED
 camera = CameraLED.CameraLED()
 camera.off();
@@ -466,6 +467,45 @@ def TrackWand():
                 cv2.destroyAllWindows()
                 break
 
+class myHandler(BaseHTTPRequestHandler):
+    #Handler for the GET requests
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-type','text/html')
+        self.end_headers()
+        # Send the html message
+        if (self.path == "/circle"):
+            Spell("circle");
+        if (self.path == "/square"):
+            Spell("square");
+        if (self.path == "/zee"):
+            Spell("zee");
+        if (self.path == "/eight"):
+            Spell("eight");
+        if (self.path == "/triangle"):
+            Spell("triangle");
+        self.wfile.write("{'done':true}")
+        return
+
+
+def runServer():
+    import SimpleHTTPServer
+    import SocketServer
+
+    PORT = 8000
+    try:
+	#Create a web server and define the handler to manage the
+	#incoming request
+	server = HTTPServer(('', PORT), myHandler)
+	print 'Started httpserver on port ' , PORT
+
+	#Wait forever for incoming htto requests
+	server.serve_forever()
+
+    except KeyboardInterrupt:
+	print '^C received, shutting down the web server'
+	server.socket.close()
+
 try:
     TrainShapes()
     t = Thread(target=FrameReader)
@@ -474,6 +514,10 @@ try:
     find = Thread(target=FindWand)
     find.do_run = True
     find.start()
+
+    server = Thread(target=runServer)
+    server.do_run = True
+    server.start()
 
     print "START incendio_pin ON and set switch off if video is running"
     time.sleep(2)
@@ -488,3 +532,4 @@ finally:
     cv2.destroyAllWindows()
     vs.stop()
     sys.exit(1)
+

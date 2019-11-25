@@ -31,6 +31,8 @@ const plug = client.getDevice({host: '192.168.1.31'}).then((device)=>{
 
     res.json({"done": newState == true});
   });
+
+  app.use('/static', express.static('/home/pi/pi_to_potter/nodeservice/static'))
 });
 
 

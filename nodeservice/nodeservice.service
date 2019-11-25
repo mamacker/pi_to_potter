@@ -1,9 +1,9 @@
 [Unit]
-Description=Run forever tplink
+Description=Run forever node service
 After=network-online.target multi-user.target
 
 [Service]
-WorkingDirectory=/home/pi/pi_to_potter/tplink
+WorkingDirectory=/home/pi/pi_to_potter/nodeservice
 User=pi
 ExecStart=/home/pi/.nvm/versions/node/v13.2.0/bin/node index.js
 RestartSec=5
