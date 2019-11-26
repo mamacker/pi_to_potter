@@ -3,7 +3,6 @@ const client = new Client();
 
 let d = null;
 let newState = 1;
-
 const plug = client.getDevice({host: '192.168.1.31'}).then((device)=>{
   device.getSysInfo().then(console.log);
   d = device;
@@ -12,6 +11,8 @@ const plug = client.getDevice({host: '192.168.1.31'}).then((device)=>{
   }, 3000);
 
   d.startPolling(1000);
+}).catch((ex) => {
+  console.log("Exception setting up outlet: ", ex);
 });
 
 var express = require("express");
@@ -38,5 +39,3 @@ app.get("/device/:state", (req, res, next) => {
 });
 
 app.use('/static', express.static('/home/pi/pi_to_potter/nodeservice/static'))
-
-
