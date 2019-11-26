@@ -3,17 +3,20 @@ const client = new Client();
 
 let d = null;
 let newState = 1;
-const plug = client.getDevice({host: '192.168.1.31'}).then((device)=>{
-  device.getSysInfo().then(console.log);
-  d = device;
-  setInterval(() => {
-    d.setPowerState(newState);
-  }, 3000);
+function findPlug() {
+  let plug = client.getDevice({host: '192.168.1.31'}).then((device)=>{
+    device.getSysInfo().then(console.log);
+    d = device;
+    setInterval(() => {
+      d.setPowerState(newState);
+    }, 3000);
 
-  d.startPolling(1000);
-}).catch((ex) => {
-  console.log("Exception setting up outlet: ", ex);
-});
+    d.startPolling(1000);
+  }).catch((ex) => {
+    console.log("Exception setting up outlet: ", ex);
+    setTimeout(findPlug, 1000);
+  });
+}
 
 var express = require("express");
 var app = express();
@@ -29,10 +32,14 @@ app.get("/device/:state", (req, res, next) => {
   }
 
   console.log("State: ", newState);
-  if (newState) {
-    d.setPowerState(1);
-  } else {
-    d.setPowerState(0);
+  try {
+    if (newState) {
+      d.setPowerState(1);
+    } else {
+      d.setPowerState(0);
+    }
+  } catch(ex) {
+    setTimeout(findPlug, 1000);
   }
 
   res.json({"done": newState == true});
