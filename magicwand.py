@@ -118,10 +118,26 @@ def turnOff(characteristic):
     characteristic.write(command);
 
 bleState = False;
+bellProcess = None
 def toggleBLE():
     global bleState;
+    global bellProcess
+    try:
+        if bellProcess is not None:
+            bellProcess.kill();
+        bellProcess = subprocess.Popen(["/usr/bin/aplay", '/home/pi/pi_to_potter/bell.wav']);
+    except:
+        print "Exception."
+        None
     bleState = not bleState;
     runScanAndSet(bleState);
+    time.sleep(10);
+    try:
+        if bellProcess is not None:
+            bellProcess.kill();
+    except:
+        print "Exception."
+        None
 
 print "Initializing point tracking"
 
