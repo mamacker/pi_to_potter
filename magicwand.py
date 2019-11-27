@@ -48,6 +48,8 @@ scanner = Scanner().withDelegate(ScanDelegate())
 failures = 0;
 def runScanAndSet(state):
     global found;
+    global failures;
+    print "Trying at failure: " + str(failures);
     found = False;
     peripheral = None;
     devices = scanner.scan(3)
