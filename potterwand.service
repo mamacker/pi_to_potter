@@ -4,7 +4,6 @@ After=network-online.target multi-user.target
 
 [Service]
 WorkingDirectory=/home/pi/pi_to_potter
-User=pi
 ExecStart=/home/pi/pi_to_potter/runit.sh
 RestartSec=5
 Restart=always
