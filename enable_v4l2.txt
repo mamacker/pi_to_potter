@@ -1,6 +1,9 @@
 # Instructions for using the v4l2 version of the camera APIs
 
 sudo modprobe bcm2835-v4l2
+sudo apt-get install python-dev
+sudo apt-get install libudev-dev
+
 sudo pip install v4l2
 sudo pip install v4l2capture
 
