@@ -9,10 +9,19 @@
     Figure 8 - pin toggle 17 
   </div>
   <div style="border-radius:5px; border:3px solid black; margin:10px; padding:10px; width:300px; vertical-align:middle;text-align:center;font-size:30px;font-weight:bold;box-shadow: 5px 5px; cursor:pointer;position:relative" id="triangle">
-    Triangle - TP Link
+    Triangle - Audio
   </div>
   <div style="border-radius:5px; border:3px solid black; margin:10px; padding:10px; width:300px; vertical-align:middle;text-align:center;font-size:30px;font-weight:bold;box-shadow: 5px 5px; cursor:pointer;position:relative" id="zee">
-    Zee - pin toggle 27
+    Zee - Audio
+  </div>
+  <div style="border-radius:5px; border:3px solid black; margin:10px; padding:10px; width:300px; vertical-align:middle;text-align:center;font-size:30px;font-weight:bold;box-shadow: 5px 5px; cursor:pointer;position:relative" id="center">
+    Center - Audio
+  </div>
+  <div style="border-radius:5px; border:3px solid black; margin:10px; padding:10px; width:300px; vertical-align:middle;text-align:center;font-size:30px;font-weight:bold;box-shadow: 5px 5px; cursor:pointer;position:relative" id="left">
+    Left - Crystal
+  </div>
+  <div style="border-radius:5px; border:3px solid black; margin:10px; padding:10px; width:300px; vertical-align:middle;text-align:center;font-size:30px;font-weight:bold;box-shadow: 5px 5px; cursor:pointer;position:relative" id="tee">
+    Tee - Bubbles
   </div>
   <script>
     var div = document.getElementById("circle");
@@ -37,6 +46,27 @@
     })(div));
 
     div = document.getElementById("zee");
+    div.addEventListener("click", ((div) => {
+      return () => {
+        handleClick(div);
+      };
+    })(div));
+
+    div = document.getElementById("tee");
+    div.addEventListener("click", ((div) => {
+      return () => {
+        handleClick(div);
+      };
+    })(div));
+
+    div = document.getElementById("left");
+    div.addEventListener("click", ((div) => {
+      return () => {
+        handleClick(div);
+      };
+    })(div));
+
+    div = document.getElementById("center");
     div.addEventListener("click", ((div) => {
       return () => {
         handleClick(div);
