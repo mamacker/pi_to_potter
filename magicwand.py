@@ -38,7 +38,7 @@ class ScanDelegate(DefaultDelegate):
         global found;
         if isNewDev:
             print "Discovered device", dev.addr
-            if (dev.addr == 'cb:22:99:ce:97:8f'):
+            if (dev.addr == 'ef:26:f1:d5:8a:87'):
                 found = True
         elif isNewData:
             print "Received new data from", dev.addr
@@ -54,7 +54,7 @@ def runScanAndSet(state):
     peripheral = None;
     devices = scanner.scan(3)
     try:
-        peripheral = btle.Peripheral('cb:22:99:ce:97:8f', btle.ADDR_TYPE_RANDOM)
+        peripheral = btle.Peripheral('ef:26:f1:d5:8a:87', btle.ADDR_TYPE_RANDOM)
         if (peripheral == None):
             failures += 1;
             if (failures < 10):
@@ -85,7 +85,7 @@ def turnOn(characteristic):
     # Set Output
     command = bytearray(3);
     command[0] = 0x53; #S
-    command[1] = 0x04;
+    command[1] = 0x05;
     command[2] = 0x01;
 
     print str(command)
@@ -94,7 +94,7 @@ def turnOn(characteristic):
     # Turn on
     command = bytearray(3);
     command[0] = 0x54; #T
-    command[1] = 0x04;
+    command[1] = 0x05;
     command[2] = 0x01;
 
     print str(command)
@@ -104,7 +104,7 @@ def turnOff(characteristic):
     # Set Output
     command = bytearray(3);
     command[0] = 0x53; #S
-    command[1] = 0x04;
+    command[1] = 0x05;
     command[2] = 0x01;
 
     print str(command)
@@ -113,7 +113,7 @@ def turnOff(characteristic):
     # Turn on
     command = bytearray(3);
     command[0] = 0x54; #T
-    command[1] = 0x04;
+    command[1] = 0x05;
     command[2] = 0x00;
 
     print str(command)
@@ -301,38 +301,55 @@ def FrameReader():
         frame_holder = frame
         time.sleep(.03);
 
+bubblesSwitch = False;
 def Spell(spell):
+    global bubblesSwitch;
     #Invoke IoT (or any other) actions here
     if (spell=="center"):
+        os.system('killall mpg321');
+        os.system('mpg321 /home/pi/pi_to_potter/reys.mp3 &')
         None
     elif (spell=="circle"):
+        os.system('killall mpg321');
 	print "Playing audio file..."
         os.system('mpg321 /home/pi/pi_to_potter/audio.mp3 &')
     elif (spell=="eight"):
         print "Togging digital logger."
+        os.system('killall mpg321');
+        os.system('mpg321 /home/pi/pi_to_potter/tinkle.mp3 &')
         digitalLogger.toggle();
         None
     elif (spell=="left"):
         print "Toggling magic crystal."
-        t = Thread(target=toggleBLE);
-        t.do_run = True
-        t.start()
+        toggleBLE();
         None
     elif (spell=="square"):
-        print "Toggling 'other' pin."
-        otherpin.toggle();
+        None
         None
     elif (spell=="swish"):
         None
     elif (spell=="tee"):
+        print "Togging bubbles."
+        bubblesSwitch = not bubblesSwitch;
+        os.system('killall mpg321');
+        os.system('mpg321 /home/pi/pi_to_potter/spellshot.mp3 &')
+        if (bubblesSwitch):
+            os.system('/home/pi/pi_to_potter/bubbleson.sh');
+        else:
+            os.system('/home/pi/pi_to_potter/bubblesoff.sh');
         None
     elif (spell=="triangle"):
         print "Toggling outlet."
-        URL = "http://localhost:3000/device/t";
-        r = requests.get(url = URL);
+	print "Playing audio file..."
+        os.system('killall mpg321');
+        os.system('mpg321 /home/pi/pi_to_potter/wonder.mp3 &')
+        #URL = "http://localhost:3000/device/t";
+        #r = requests.get(url = URL);
     elif (spell=="zee"):
         print "Toggling 'other' pin."
-        otherpin.toggle();
+        print "Playing audio file..."
+        os.system('killall mpg321');
+        os.system('mpg321 /home/pi/pi_to_potter/zoo.mp3 &')
         None
     print "CAST: %s" %spell
 
