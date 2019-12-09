@@ -619,6 +619,12 @@ class myHandler(BaseHTTPRequestHandler):
             Spell("eight");
         if (self.path == "/triangle"):
             Spell("triangle");
+        if (self.path == "/tee"):
+            Spell("tee");
+        if (self.path == "/left"):
+            Spell("left");
+        if (self.path == "/center"):
+            Spell("center");
         self.wfile.write("{'done':true}")
         return
 
