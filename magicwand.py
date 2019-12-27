@@ -131,7 +131,7 @@ def toggleBLE():
     try:
         if bellProcess is not None:
             bellProcess.kill();
-        bellProcess = subprocess.Popen(["/usr/bin/aplay", '/home/pi/pi_to_potter/bell.wav']);
+        bellProcess = subprocess.Popen(["/usr/bin/aplay", '/home/pi/pi_to_potter/music/bell.wav']);
     except:
         print("Exception.")
         None
@@ -311,16 +311,16 @@ def Spell(spell):
     #Invoke IoT (or any other) actions here
     if (spell=="center"):
         os.system('killall mpg321');
-        os.system('mpg321 /home/pi/pi_to_potter/reys.mp3 &')
+        os.system('mpg321 /home/pi/pi_to_potter/music/reys.mp3 &')
         None
     elif (spell=="circle"):
         os.system('killall mpg321');
         print("Playing audio file...");
-        os.system('mpg321 /home/pi/pi_to_potter/audio.mp3 &')
+        os.system('mpg321 /home/pi/pi_to_potter/music/audio.mp3 &')
     elif (spell=="eight"):
         print("Togging digital logger.")
         os.system('killall mpg321');
-        os.system('mpg321 /home/pi/pi_to_potter/tinkle.mp3 &')
+        os.system('mpg321 /home/pi/pi_to_potter/music/tinkle.mp3 &')
         digitalLogger.toggle();
         None
     elif (spell=="left"):
@@ -336,7 +336,7 @@ def Spell(spell):
         print("Togging bubbles.")
         bubblesSwitch = not bubblesSwitch;
         os.system('killall mpg321');
-        os.system('mpg321 /home/pi/pi_to_potter/spellshot.mp3 &')
+        os.system('mpg321 /home/pi/pi_to_potter/music/spellshot.mp3 &')
         if (bubblesSwitch):
             os.system('/home/pi/pi_to_potter/bubbleson.sh');
         else:
@@ -346,14 +346,14 @@ def Spell(spell):
         print("Toggling outlet.")
         print("Playing audio file...")
         os.system('killall mpg321');
-        os.system('mpg321 /home/pi/pi_to_potter/wonder.mp3 &')
+        os.system('mpg321 /home/pi/pi_to_potter/music/wonder.mp3 &')
         #URL = "http://localhost:3000/device/t";
         #r = requests.get(url = URL);
     elif (spell=="zee"):
         print("Toggling 'other' pin.")
         print("Playing audio file...")
         os.system('killall mpg321');
-        os.system('mpg321 /home/pi/pi_to_potter/zoo.mp3 &')
+        os.system('mpg321 /home/pi/pi_to_potter/music/zoo.mp3 &')
         None
     print("CAST: %s" %spell)
 
@@ -444,7 +444,7 @@ def FindWand():
                     if audioProcess is not None:
                         audioProcess.kill();
                     try:
-                        audioProcess = subprocess.Popen(["/usr/bin/aplay", '/home/pi/pi_to_potter/twinkle.wav']);
+                        audioProcess = subprocess.Popen(["/usr/bin/aplay", '/home/pi/pi_to_potter/music/twinkle.wav']);
                     except:
                         if audioProcess is not None:
                             audioProcess.kill();

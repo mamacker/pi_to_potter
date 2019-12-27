@@ -9,9 +9,9 @@ See the whole build, tips, tricks and comments at: https://bloggerbrothers.com/2
 - Create a fresh raspbian disk with the Desktop OS
 - Follow install instructions to get OpenCV 3.1
   - Run through the instructions found in: steps_taken.txt
-- Download the git
+- Download the git repository
 - run:
-  - python trained.py
+  - python magic_wand.py
   
 ## Using the v4l2 driver for camera control:
 The v4l2 driver allows you to dial in the exposure, brightness and more.
