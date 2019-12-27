@@ -1,5 +1,7 @@
 #/usr/bin/python
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
+from __future__ import print_function
 import io
 import numpy as np
 import argparse
@@ -18,8 +20,10 @@ import imutils
 import pigpio
 
 from imutils.video.pivideostream import PiVideoStream
+from six.moves import range
+from six.moves import zip
 
-print "Initializing point tracking"
+print("Initializing point tracking")
 
 parser = argparse.ArgumentParser(description='Cast some spells!  Recognize wand motions')
 parser.add_argument('--train', help='Causes wand movement images to be stored for training selection.', action="store_true")
@@ -43,14 +47,14 @@ pi.set_mode(incendio_pin,pigpio.OUTPUT)
 trinket_pin = 12
 pi.set_mode(trinket_pin,pigpio.OUTPUT)
 
-print "START switch_pin ON for pre-video test"
+print("START switch_pin ON for pre-video test")
 pi.write(nox_pin,0)
 pi.write(incendio_pin,0)
 pi.write(switch_pin,1)
 
 args = parser.parse_args()
-print(args.train)
-print(args.circles)
+print((args.train))
+print((args.circles))
 
 # Parameters
 lk_params = dict( winSize  = (25,25),
@@ -68,7 +72,7 @@ time.sleep(2.0)
 run_request = True
 frame_holder = vs.read()
 frame = None
-print "About to start."
+print("About to start.")
 
 knn = None
 nameLookup = {}
@@ -92,17 +96,17 @@ def TrainOcr() :
                     trainingSet.append(join(mypath,d,f));
                     numPics = numPics + 1
 
-    print "Training set..."
-    print trainingSet
+    print("Training set...")
+    print(trainingSet)
 
-    print "Labels..."
-    print labelNames
+    print("Labels...")
+    print(labelNames)
 
-    print "Indexes..."
-    print labelIndexes
+    print("Indexes...")
+    print(labelIndexes)
 
-    print "Lookup..."
-    print nameLookup
+    print("Lookup...")
+    print(nameLookup)
 
     samples = []
     for i in range(0, numPics):
@@ -153,40 +157,40 @@ def Spell(spell):
     prevSpell = spell
     #Invoke IoT (or any other) actions here
     if (spell=="center"):
-        print "trinket_pin trigger"
+        print("trinket_pin trigger")
         pi.write(trinket_pin,0)
         time.sleep(1)
         pi.write(trinket_pin,1)
     elif (spell=="circle") or (spell=="square"):
-        print "switch_pin OFF"
+        print("switch_pin OFF")
         pi.write(switch_pin,0)
-        print "nox_pin OFF"
+        print("nox_pin OFF")
         pi.write(nox_pin,0)
-        print "incendio_pin ON"
+        print("incendio_pin ON")
         pi.write(incendio_pin,1)
     elif (spell=="eight"):
         None
     elif (spell=="left"):
-        print "switch_pin ON"
+        print("switch_pin ON")
         pi.write(switch_pin,1)
-        print "nox_pin OFF"
+        print("nox_pin OFF")
         pi.write(nox_pin,0)
-        print "incendio_pin OFF"
+        print("incendio_pin OFF")
         pi.write(incendio_pin,0)    
     elif (spell=="swish"):
         None
     elif (spell=="tee"):
         None
     elif (spell=="triangle"):
-        print "switch_pin OFF"
+        print("switch_pin OFF")
         pi.write(switch_pin,0)
-        print "nox_pin ON"
+        print("nox_pin ON")
         pi.write(nox_pin,1)
-        print "incendio_pin OFF"
+        print("incendio_pin OFF")
         pi.write(incendio_pin,0)    
     elif (spell=="zee"):
         None
-    print "CAST: %s" %spell
+    print("CAST: %s" %spell)
 
 
 def GetPoints(image):
@@ -233,7 +237,7 @@ def FindWand():
 
 def TrackWand():
         global old_frame,old_gray,p0,mask, line_mask, color, frame, active, run_request
-        print "Starting wand tracking..."
+        print("Starting wand tracking...")
         color = (0,0,255)
 
 	# Create a mask image for drawing purposes
@@ -257,7 +261,7 @@ def TrackWand():
                         except cv2.error as e:
                             None
                         except:
-                            print "."
+                            print(".")
                             continue
                     else:
                         noPt = noPt + 1
@@ -273,7 +277,7 @@ def TrackWand():
                                 if line_mask:
                                     cv2.imshow("Raspberry Potter", line_mask)
                                 line_mask = np.zeros_like(line_mask)
-                                print ""
+                                print("")
                             finally:
                                 noPt = 0
                                 run_request = True
@@ -307,9 +311,9 @@ def TrackWand():
                 #print sys.exc_info()
             except TypeError as e:
                 None
-                print "Type error."
+                print("Type error.")
                 exc_type, exc_obj, exc_tb = sys.exc_info()
-                print(exc_type, exc_tb.tb_lineno)
+                print((exc_type, exc_tb.tb_lineno))
             except KeyboardInterrupt as e:
                 raise e
             except:
@@ -322,7 +326,7 @@ def TrackWand():
                 break
 
 try:
-    print "START incendio_pin ON and set switch off if video is running"
+    print("START incendio_pin ON and set switch off if video is running")
     pi.write(incendio_pin,1)
     pi.write(switch_pin,0)      
     TrainOcr()
@@ -333,7 +337,7 @@ try:
     find.do_run = True
     find.start()
 
-    print "START incendio_pin ON and set switch off if video is running"
+    print("START incendio_pin ON and set switch off if video is running")
     time.sleep(2)
     TrackWand()
 except KeyboardInterrupt:

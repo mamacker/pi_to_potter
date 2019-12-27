@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 from bluepy import btle
 from bluepy.btle import Scanner, DefaultDelegate
 
@@ -9,11 +11,11 @@ class ScanDelegate(DefaultDelegate):
     def handleDiscovery(self, dev, isNewDev, isNewData):
         global found;
         if isNewDev:
-            print "Discovered device", dev.addr
+            print("Discovered device", dev.addr)
             if (dev.addr == 'cb:22:99:ce:97:8f'):
                 found = True
         elif isNewData:
-            print "Received new data from", dev.addr
+            print("Received new data from", dev.addr)
 
 scanner = Scanner().withDelegate(ScanDelegate())
 
@@ -50,7 +52,7 @@ def turnOn(characteristic):
     command[1] = 0x04;
     command[2] = 0x01;
 
-    print str(command)
+    print(str(command))
     characteristic.write(command);
 
     # Turn on
@@ -59,7 +61,7 @@ def turnOn(characteristic):
     command[1] = 0x04;
     command[2] = 0x01;
 
-    print str(command)
+    print(str(command))
     characteristic.write(command);
 
 def turnOff(characteristic):
@@ -69,7 +71,7 @@ def turnOff(characteristic):
     command[1] = 0x04;
     command[2] = 0x01;
 
-    print str(command)
+    print(str(command))
     characteristic.write(command);
 
     # Turn on
@@ -78,7 +80,7 @@ def turnOff(characteristic):
     command[1] = 0x04;
     command[2] = 0x00;
 
-    print str(command)
+    print(str(command))
     characteristic.write(command);
 
 runScanAndSet(False);

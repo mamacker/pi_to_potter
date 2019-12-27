@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os, fcntl, struct
 
 # RaspberryPi 3 camera LED controller by BigNerd95
@@ -56,19 +58,19 @@ if __name__ == "__main__":
     import sys
 
     def usage():
-        print("Usage: " + sys.argv[0] + " (state|toggle|on|off)")
+        print(("Usage: " + sys.argv[0] + " (state|toggle|on|off)"))
     
     if len(sys.argv) == 2:
         led = CameraLED()
 
         if sys.argv[1] == "state":
-            print("State: " + str(led.state()))
+            print(("State: " + str(led.state())))
         elif sys.argv[1] == "toggle":
-            print("State: " + str(led.toggle()))
+            print(("State: " + str(led.toggle())))
         elif sys.argv[1] == "on":
-            print("State: " + str(led.on()))
+            print(("State: " + str(led.on())))
         elif sys.argv[1] == "off":
-            print("State: " + str(led.off()))
+            print(("State: " + str(led.off())))
         else:
             usage()
     else:

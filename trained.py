@@ -1,5 +1,7 @@
 #/usr/bin/python
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
+from __future__ import print_function
 import io
 import numpy as np
 import argparse
@@ -18,9 +20,11 @@ import time
 import imutils
 
 from imutils.video.pivideostream import PiVideoStream
+from six.moves import range
+from six.moves import zip
 fgbg = cv2.bgsegm.createBackgroundSubtractorMOG(10, 2, .5, 0);
 
-print "Initializing point tracking"
+print("Initializing point tracking")
 
 parser = argparse.ArgumentParser(description='Cast some spells!  Recognize wand motions')
 parser.add_argument('--train', help='Causes wand movement images to be stored for training selection.', action="store_true")
@@ -29,8 +33,8 @@ parser.add_argument('--circles', help='Use circles to select wand location', act
 
 
 args = parser.parse_args()
-print(args.train)
-print(args.circles)
+print((args.train))
+print((args.circles))
 
 # Parameters
 lk_params = dict( winSize  = (25,25),
@@ -48,7 +52,7 @@ time.sleep(2.0)
 run_request = True
 frame_holder = vs.read()
 frame = None
-print "About to start."
+print("About to start.")
 
 knn = None
 nameLookup = {}
@@ -60,11 +64,11 @@ def TrainOcr() :
     trainingSet = []
     numPics = 0
     dirCount = 0
-    print "Getting script path."
+    print("Getting script path.")
     scriptpath = os.path.realpath(__file__)
-    print "Script Path: " + scriptpath
+    print("Script Path: " + scriptpath)
     mypath = os.path.dirname(scriptpath) + "/Pictures/"
-    print "Training directory:" + mypath
+    print("Training directory:" + mypath)
     for d in listdir(mypath):
         if isdir(join(mypath, d)):
             nameLookup[dirCount] = d
@@ -76,17 +80,17 @@ def TrainOcr() :
                     trainingSet.append(join(mypath,d,f));
                     numPics = numPics + 1
 
-    print "Training set..."
-    print trainingSet
+    print("Training set...")
+    print(trainingSet)
 
-    print "Labels..."
-    print labelNames
+    print("Labels...")
+    print(labelNames)
 
-    print "Indexes..."
-    print labelIndexes
+    print("Indexes...")
+    print(labelIndexes)
 
-    print "Lookup..."
-    print nameLookup
+    print("Lookup...")
+    print(nameLookup)
 
     samples = []
     for i in range(0, numPics):
@@ -112,16 +116,16 @@ def CheckOcr(img):
     imgArr = np.array(test_gray).astype(np.float32)
     sample = imgArr.reshape(-1,400).astype(np.float32)
     ret,result,neighbours,dist = knn.findNearest(sample,k=5)
-    print ret, result, neighbours, dist
+    print(ret, result, neighbours, dist)
     if nameLookup[ret] is not None:
-        print "Match: " + nameLookup[ret]
+        print("Match: " + nameLookup[ret])
         return nameLookup[ret]
     else:
         return "error"
 
 def FrameReader():
     global frame_holder
-    print "Starting frame holder..."
+    print("Starting frame holder...")
     t = threading.currentThread()
     while getattr(t, "do_run", True):
         frame = vs.read()
@@ -134,19 +138,19 @@ def Spell(spell):
     #Invoke IoT (or any other) actions here
     return
     if (spell=="center"):
-	print "trinket_pin trigger"
+	print("trinket_pin trigger")
     elif (spell=="circle"):
-	print "switch_pin OFF"
-	print "nox_pin OFF"
-	print "incendio_pin ON"
+	print("switch_pin OFF")
+	print("nox_pin OFF")
+	print("incendio_pin ON")
     elif (spell=="eight"):
-	print "switch_pin ON"
-	print "nox_pin OFF"
-	print "incendio_pin OFF"
+	print("switch_pin ON")
+	print("nox_pin OFF")
+	print("incendio_pin OFF")
     elif (spell=="left"):
-	print "switch_pin OFF"
-	print "nox_pin ON"
-	print "incendio_pin OFF"
+	print("switch_pin OFF")
+	print("nox_pin ON")
+	print("incendio_pin OFF")
     elif (spell=="square"):
         None
     elif (spell=="swish"):
@@ -157,7 +161,7 @@ def Spell(spell):
         None
     elif (spell=="zee"):
         None
-    print "CAST: %s" %spell
+    print("CAST: %s" %spell)
 
 
 def GetPoints(image):
@@ -205,7 +209,7 @@ def FindWand():
 
 def TrackWand():
         global old_frame,old_gray,p0,mask, line_mask, color, frame, active, run_request
-        print "Starting wand tracking..."
+        print("Starting wand tracking...")
         color = (0,0,255)
 
 	# Create a mask image for drawing purposes
@@ -229,7 +233,7 @@ def TrackWand():
                         except cv2.error as e:
                             None
                         except:
-                            print "."
+                            print(".")
                             continue
                     else:
                         noPt = noPt + 1
@@ -245,7 +249,7 @@ def TrackWand():
                                 if line_mask:
                                     cv2.imshow("Raspberry Potter", line_mask)
                                 line_mask = np.zeros_like(line_mask)
-                                print ""
+                                print("")
                             finally:
                                 noPt = 0
                                 run_request = True
@@ -279,9 +283,9 @@ def TrackWand():
                 #print sys.exc_info()
             except TypeError as e:
                 None
-                print "Type error."
+                print("Type error.")
                 exc_type, exc_obj, exc_tb = sys.exc_info()
-                print(exc_type, exc_tb.tb_lineno)
+                print((exc_type, exc_tb.tb_lineno))
             except KeyboardInterrupt as e:
                 raise e
             except:
@@ -302,7 +306,7 @@ try:
     find.do_run = True
     find.start()
 
-    print "START incendio_pin ON and set switch off if video is running"
+    print("START incendio_pin ON and set switch off if video is running")
     time.sleep(2)
     TrackWand()
 except KeyboardInterrupt:

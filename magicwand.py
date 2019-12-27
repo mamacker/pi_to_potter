@@ -1,5 +1,7 @@
 #/usr/bin/python
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
+from __future__ import print_function
 import io
 import numpy as np
 import argparse
@@ -19,10 +21,12 @@ import time
 import v4l2capture
 import select
 import requests
-from BaseHTTPServer import BaseHTTPRequestHandler,HTTPServer
+from six.moves.BaseHTTPServer import BaseHTTPRequestHandler,HTTPServer
 from bluepy import btle
 from bluepy.btle import Scanner, DefaultDelegate
 import CameraLED
+from six.moves import range
+from six.moves import zip
 camera = CameraLED.CameraLED()
 camera.off();
 
@@ -37,11 +41,11 @@ class ScanDelegate(DefaultDelegate):
     def handleDiscovery(self, dev, isNewDev, isNewData):
         global found;
         if isNewDev:
-            print "Discovered device", dev.addr
+            print("Discovered device", dev.addr);
             if (dev.addr == 'ef:26:f1:d5:8a:87'):
                 found = True
         elif isNewData:
-            print "Received new data from", dev.addr
+            print("Received new data from", dev.addr)
 
 scanner = Scanner().withDelegate(ScanDelegate())
 
@@ -49,7 +53,7 @@ failures = 0;
 def runScanAndSet(state):
     global found;
     global failures;
-    print "Trying at failure: " + str(failures);
+    print("Trying at failure: " + str(failures));
     found = False;
     peripheral = None;
     devices = scanner.scan(3)
@@ -88,7 +92,7 @@ def turnOn(characteristic):
     command[1] = 0x05;
     command[2] = 0x01;
 
-    print str(command)
+    print(str(command))
     characteristic.write(command);
 
     # Turn on
@@ -97,7 +101,7 @@ def turnOn(characteristic):
     command[1] = 0x05;
     command[2] = 0x01;
 
-    print str(command)
+    print(str(command))
     characteristic.write(command);
 
 def turnOff(characteristic):
@@ -107,7 +111,7 @@ def turnOff(characteristic):
     command[1] = 0x05;
     command[2] = 0x01;
 
-    print str(command)
+    print(str(command))
     characteristic.write(command);
 
     # Turn on
@@ -116,7 +120,7 @@ def turnOff(characteristic):
     command[1] = 0x05;
     command[2] = 0x00;
 
-    print str(command)
+    print(str(command))
     characteristic.write(command);
 
 bleState = False;
@@ -129,7 +133,7 @@ def toggleBLE():
             bellProcess.kill();
         bellProcess = subprocess.Popen(["/usr/bin/aplay", '/home/pi/pi_to_potter/bell.wav']);
     except:
-        print "Exception."
+        print("Exception.")
         None
     bleState = not bleState;
     runScanAndSet(bleState);
@@ -138,18 +142,18 @@ def toggleBLE():
         if bellProcess is not None:
             bellProcess.kill();
     except:
-        print "Exception."
+        print("Exception.")
         None
 
-print "Initializing point tracking"
+print("Initializing point tracking")
 
 parser = argparse.ArgumentParser(description='Cast some spells!  Recognize wand motions')
 parser.add_argument('--train', help='Causes wand movement images to be stored for training selection.', action="store_true")
 parser.add_argument('--setup', help='show camera view', action="store_true")
 
 args = parser.parse_args()
-print(args.train)
-print(args.setup)
+print((args.train))
+print((args.setup))
 
 # This code checks to see if we should start full screen or not.
 # If the file exists, we start in full screen.
@@ -203,7 +207,7 @@ frame_holder = frame_holder[yStart:yEnd, xStart:xEnd]
 cv2.flip(frame_holder,1,frame_holder)
 
 frame = None
-print "About to start."
+print("About to start.")
 
 knn = None
 nameLookup = {}
@@ -215,7 +219,7 @@ def nearPoints(p1, p2, dist):
         point2[1] = p2["y"];
 
     distance = math.sqrt( ((p1[0]-point2[0])**2)+((p1[1]-point2[1])**2) )
-    print "Comparing: " + str(p1[0]) + " " + str(p1[1]) + " " + str(point2[0]) + " " + str(point2[1]) + " distance: " + str(distance);
+    print("Comparing: " + str(p1[0]) + " " + str(p1[1]) + " " + str(point2[0]) + " " + str(point2[1]) + " distance: " + str(distance));
     return distance < dist;
 
 def TrainShapes() :
@@ -237,17 +241,17 @@ def TrainShapes() :
                     trainingSet.append(join(mypath,d,f));
                     numPics = numPics + 1
 
-    print "Training set..."
-    print trainingSet
+    print("Training set...")
+    print(trainingSet)
 
-    print "Labels..."
-    print labelNames
+    print("Labels...")
+    print(labelNames)
 
-    print "Indexes..."
-    print labelIndexes
+    print("Indexes...")
+    print(labelIndexes)
 
-    print "Lookup..."
-    print nameLookup
+    print("Lookup...")
+    print(nameLookup)
 
     samples = []
     for i in range(0, numPics):
@@ -279,9 +283,9 @@ def CheckShape(img):
 
     sample = imgArr.reshape(-1,400).astype(np.float32)
     ret,result,neighbours,dist = knn.findNearest(sample,k=5)
-    print ret, result, neighbours, dist
+    print(ret, result, neighbours, dist)
     if nameLookup[ret] is not None:
-        print "Match: " + nameLookup[ret]
+        print("Match: " + nameLookup[ret])
         return nameLookup[ret]
     else:
         return "error"
@@ -311,16 +315,16 @@ def Spell(spell):
         None
     elif (spell=="circle"):
         os.system('killall mpg321');
-	print "Playing audio file..."
+        print("Playing audio file...");
         os.system('mpg321 /home/pi/pi_to_potter/audio.mp3 &')
     elif (spell=="eight"):
-        print "Togging digital logger."
+        print("Togging digital logger.")
         os.system('killall mpg321');
         os.system('mpg321 /home/pi/pi_to_potter/tinkle.mp3 &')
         digitalLogger.toggle();
         None
     elif (spell=="left"):
-        print "Toggling magic crystal."
+        print("Toggling magic crystal.")
         toggleBLE();
         None
     elif (spell=="square"):
@@ -329,7 +333,7 @@ def Spell(spell):
     elif (spell=="swish"):
         None
     elif (spell=="tee"):
-        print "Togging bubbles."
+        print("Togging bubbles.")
         bubblesSwitch = not bubblesSwitch;
         os.system('killall mpg321');
         os.system('mpg321 /home/pi/pi_to_potter/spellshot.mp3 &')
@@ -339,19 +343,19 @@ def Spell(spell):
             os.system('/home/pi/pi_to_potter/bubblesoff.sh');
         None
     elif (spell=="triangle"):
-        print "Toggling outlet."
-	print "Playing audio file..."
+        print("Toggling outlet.")
+        print("Playing audio file...")
         os.system('killall mpg321');
         os.system('mpg321 /home/pi/pi_to_potter/wonder.mp3 &')
         #URL = "http://localhost:3000/device/t";
         #r = requests.get(url = URL);
     elif (spell=="zee"):
-        print "Toggling 'other' pin."
-        print "Playing audio file..."
+        print("Toggling 'other' pin.")
+        print("Playing audio file...")
         os.system('killall mpg321');
         os.system('mpg321 /home/pi/pi_to_potter/zoo.mp3 &')
         None
-    print "CAST: %s" %spell
+    print("CAST: %s" %spell)
 
 point_aging = [];
 def trim_points():
@@ -381,7 +385,7 @@ def GetPoints(image):
     indexesToDelete = [];
     if (start_points is not None):
         for point in start_points:
-            print "point: " + str(point);
+            print("point: " + str(point));
             if len(point_aging) == 0:
                 point_aging.append({"x": point[0][0], "y":point[0][1], "times_seen": 0, "when":time.time()});
 
@@ -397,7 +401,7 @@ def GetPoints(image):
                         deleted = True;
                         break;
                     else:
-                        print "Times seen: " + str(old_point["times_seen"]) + " x: " + str(old_point["x"]) + " y: " + str(old_point["y"]);
+                        print("Times seen: " + str(old_point["times_seen"]) + " x: " + str(old_point["x"]) + " y: " + str(old_point["y"]));
 
             if not found:
                 point_aging.append({"x": point[0][0], "y":point[0][1], "times_seen": 0, "when": time.time()});
@@ -426,7 +430,7 @@ def FindWand():
     try:
         last = time.time()
         t = threading.currentThread()
-        print "Find wand..."
+        print("Find wand...")
         while getattr(t, "do_run", True):
             now = time.time()
             if run_request:
@@ -458,24 +462,24 @@ def FindWand():
             time.sleep(.3)
     except cv2.error as e:
         None
-        print "Err:"
-        print e
+        print("Err:")
+        print(e)
     except:
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        print "*** print_exception:"
+        print("*** print_exception:")
         traceback.print_exception(exc_type, exc_value, exc_traceback,
                                   limit=2, file=sys.stdout)
 
 def TrackWand():
         global old_frame, old_gray, p0, mask, frameMissingPoints, line_mask, color, active, run_request
-        print "Starting wand tracking..."
+        print("Starting wand tracking...")
         color = (0,0,255)
         frame_gray = None
         good_new = None
 
-	# Create a mask image for drawing purposes
+    # Create a mask image for drawing purposes
         noPt = 0
-	while True:
+        while True:
             try:
                 active = False
                 if p0 is not None:
@@ -488,7 +492,7 @@ def TrackWand():
                         cv2.moveWindow("gray", 0, 0);
                         cv2.moveWindow("frame_gray", 150, 30);
                     else:
-                        print "No frame."
+                        print("No frame.")
 
                     # calculate optical flow
                     newPoints = False
@@ -500,12 +504,12 @@ def TrackWand():
                                 newPoints = True
                         except cv2.error as e:
                             None
-                            print "cv err"
-                            print e
+                            print("cv err")
+                            print(e)
                         except:
-                            print "."
+                            print(".")
                             exc_type, exc_value, exc_traceback = sys.exc_info()
-                            print "*** print_exception:"
+                            print("*** print_exception:")
                             traceback.print_exception(exc_type, exc_value, exc_traceback,
                                                       limit=2, file=sys.stdout)
                             continue
@@ -527,10 +531,10 @@ def TrackWand():
                                             show_line_mask = cv2.resize(line_mask, (width, height), interpolation = cv2.INTER_CUBIC)
                                         cv2.imshow("Raspberry Potter", show_line_mask)
                                     line_mask = np.zeros_like(line_mask)
-                                    print ""
+                                    print("")
                             except:
                                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                                print "FindSpell: *** print_exception:"
+                                print("FindSpell: *** print_exception:")
                                 traceback.print_exception(exc_type, exc_value, exc_traceback,
                                                           limit=2, file=sys.stdout)
                             finally:
@@ -570,7 +574,7 @@ def TrackWand():
                                 old_gray = frame_gray.copy()
                             p0 = None;
                         else:
-                            print "Chance: " + str(frameMissingPoints);
+                            print("Chance: " + str(frameMissingPoints));
 
                 else:
                     run_request = True
@@ -587,16 +591,16 @@ def TrackWand():
                 #print sys.exc_info()
             except TypeError as e:
                 None
-                print "Type error."
+                print("Type error.")
                 exc_type, exc_obj, exc_tb = sys.exc_info()
-                print(exc_type, exc_tb.tb_lineno)
+                print((exc_type, exc_tb.tb_lineno))
             except KeyboardInterrupt as e:
                 raise e
             except:
                 None
-                print sys.exc_info()
-                print "Tracking Error: %s" % e 
-                print e
+                print(sys.exc_info())
+                print("Tracking Error: %s" % e) 
+                print(e)
             key = cv2.waitKey(10)
             if key in [27, ord('Q'), ord('q')]: # exit on ESC
                 cv2.destroyAllWindows()
@@ -630,22 +634,22 @@ class myHandler(BaseHTTPRequestHandler):
 
 
 def runServer():
-    import SimpleHTTPServer
-    import SocketServer
+    import six.moves.SimpleHTTPServer
+    import six.moves.socketserver
 
     PORT = 8000
     try:
-	#Create a web server and define the handler to manage the
-	#incoming request
-	server = HTTPServer(('', PORT), myHandler)
-	print 'Started httpserver on port ' , PORT
+        #Create a web server and define the handler to manage the
+        #incoming request
+        server = HTTPServer(('', PORT), myHandler)
+        print('Started httpserver on port ' , PORT)
 
-	#Wait forever for incoming htto requests
-	server.serve_forever()
+        #Wait forever for incoming htto requests
+        server.serve_forever()
 
     except KeyboardInterrupt:
-	print '^C received, shutting down the web server'
-	server.socket.close()
+        print('^C received, shutting down the web server')
+        server.socket.close()
 
 try:
     TrainShapes()
@@ -660,7 +664,7 @@ try:
     server.do_run = True
     server.start()
 
-    print "START incendio_pin ON and set switch off if video is running"
+    print("START incendio_pin ON and set switch off if video is running")
     time.sleep(2)
     TrackWand()
 except KeyboardInterrupt:

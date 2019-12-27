@@ -17,6 +17,8 @@ Copyright (c) 2016 Sean O'Brien.  Permission is hereby granted, free of charge, 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 '''
+from __future__ import absolute_import
+from __future__ import print_function
 import io
 import numpy as np
 import argparse
@@ -32,8 +34,11 @@ import time
 import imutils
 
 from imutils.video.pivideostream import PiVideoStream
+from six.moves import map
+from six.moves import range
+from six.moves import zip
 
-print "Initializing point tracking"
+print("Initializing point tracking")
 
 # Parameters
 lk_params = dict( winSize  = (25,25),
@@ -51,7 +56,7 @@ vs = PiVideoStream().start()
 time.sleep(2.0)
 run_request = True
 frame_holder = vs.read()
-print "About to start."
+print("About to start.")
 
 def FrameReader():
     global frame_holder
@@ -68,20 +73,20 @@ def Spell(spell):
     #Invoke IoT (or any other) actions here
     cv2.putText(mask, spell, (5, 25),cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255,0,0))
     if (spell=="Colovaria"):
-	print "trinket_pin trigger"
+	print("trinket_pin trigger")
     elif (spell=="Incendio"):
-	print "switch_pin OFF"
-	print "nox_pin OFF"
-	print "incendio_pin ON"
+	print("switch_pin OFF")
+	print("nox_pin OFF")
+	print("incendio_pin ON")
     elif (spell=="Lumos"):
-	print "switch_pin ON"
-	print "nox_pin OFF"
-	print "incendio_pin OFF"
+	print("switch_pin ON")
+	print("nox_pin OFF")
+	print("incendio_pin OFF")
     elif (spell=="Nox"):
-	print "switch_pin OFF"
-	print "nox_pin ON"
-	print "incendio_pin OFF"
-    print "CAST: %s" %spell
+	print("switch_pin OFF")
+	print("nox_pin ON")
+	print("incendio_pin OFF")
+    print("CAST: %s" %spell)
 
 
 def IsGesture(a,b,c,d,i):
@@ -140,7 +145,7 @@ def FindWand():
         while True:
             now = time.time()
             if now - last > 4 or run_request:
-                print "Running find..."
+                print("Running find...")
                 old_gray, old_frame = ProcessImage()
                 p0 = GetPoints(old_gray)
                 if p0 is not None:
@@ -152,12 +157,12 @@ def FindWand():
             time.sleep(.3)
     except:
         e = sys.exc_info()[1]
-        print "Error: %s" % e 
+        print("Error: %s" % e) 
         exit
 
 def TrackWand():
         global old_frame,old_gray,p0,mask,color,ig,img,frame, active, run_request
-        print "Starting wand tracking..."
+        print("Starting wand tracking...")
         try:
             color = (0,0,255)
             old_gray, old_frame = ProcessImage()
@@ -167,7 +172,7 @@ def TrackWand():
             if p0 is not None:
                 mask = np.zeros_like(old_frame)
         except:
-            print "No points found"
+            print("No points found")
 
 	# Create a mask image for drawing purposes
         noPt = 0
@@ -181,13 +186,13 @@ def TrackWand():
 
                     # calculate optical flow
                     if len(p0) > 0:
-                        print p0
+                        print(p0)
                         noPt = 0
                         p1, st, err = cv2.calcOpticalFlowPyrLK(old_gray, frame_gray, p0, None, **lk_params)
                     else:
                         noPt = noPt + 1
                         if noPt > 5:
-                            print "No points"
+                            print("No points")
                             noPt = 0
                             run_request = True
 
@@ -215,13 +220,13 @@ def TrackWand():
                     cv2.imshow("Original", frame)
                     run_request = True
                     time.sleep(.3)
-                    print "Doing nuthing..."
+                    print("Doing nuthing...")
 
                 # Now update the previous frame and previous points
                 old_gray = frame_gray.copy()
                 p0 = good_new.reshape(-1,1,2)
             except IndexError:
-                print "Index error - Tracking"  
+                print("Index error - Tracking")  
                 run_request = True
             except:
                 e = sys.exc_info()[0]
@@ -237,7 +242,7 @@ try:
     find = Thread(target=FindWand)
     find.start()
 
-    print "START incendio_pin ON and set switch off if video is running"
+    print("START incendio_pin ON and set switch off if video is running")
     TrackWand()
 finally:
     cv2.destroyAllWindows()
