@@ -18,7 +18,15 @@ sudo apt-get install -y libgtk2.0-dev
 sudo apt-get install -y libatlas-base-dev gfortran
 sudo apt install -y libpango-1.0-0 libatk1.0-0 libcairo-gobject2 libpangocairo-1.0-0 libqt4-test libtiff5 libqtcore4 libqtgui4 libgdk-pixbuf2.0-0 libgtk-3-0 libjasper1 libcairo2
 #sudo apt install -y libpango-1.0-0 libatk1.0-0 libcairo-gobject2 libpangocairo-1.0-0 libqt4-test libtiff5 libqtcore4 libwebp6 libavcodec58 libavutil56 libqtgui4 libavformat58 libgdk-pixbuf2.0-0 libgtk-3-0 libilmbase23 libjasper1 libcairo2 libswscale5 libopenexr23 
-sudo pip3 install --upgrade pip3
+
+cd ~/
+mkdir ~/v4l
+cd ~/v4l
+git clone https://github.com/atareao/python3-v4l2capture.git
+cd python3-v4l2capture/
+sudo ./setup.py install
+
+#sudo pip3 install --upgrade pip3
 sudo pip3 install numpy
 sudo pip3 install imutils
 sudo pip3 install python-opencv
