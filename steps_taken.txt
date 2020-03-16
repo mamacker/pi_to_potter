@@ -4,7 +4,7 @@ sudo apt-get update
 sudo apt-get dist-upgrade
 sudo reboot
 
-sudo rpi-update
+#sudo rpi-update
 sudo reboot
 
 #Turn on camera, changed locale
