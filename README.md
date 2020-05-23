@@ -12,5 +12,13 @@ See the whole build, tips, tricks and comments at: https://bloggerbrothers.com/2
 - run:
   - python magic_wand.py
 
+## To start the support webpage:
+- cd nodeservice
+- npm install
+- node index.js 
+
+## To get LOTS more detail:
 Blog article about this code base:
 https://bloggerbrothers.com/2017/12/09/turn-on-a-lamp-with-a-gesture-ir-cam-image-processing/
+
+
