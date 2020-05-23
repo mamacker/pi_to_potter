@@ -32,11 +32,13 @@ parser = argparse.ArgumentParser(description='Cast some spells!  Recognize wand 
 parser.add_argument('--train', help='Causes wand movement images to be stored for training selection.', action="store_true")
 parser.add_argument('--setup', help='show camera view', action="store_true")
 parser.add_argument('--home', help='The path to your pi_to_potter download.', default=home_address)
+parser.add_argument('--background_subtract', help='User background subtraction', action="store_true")
 
 args = parser.parse_args()
 
 print(f'Perform training? {args.train}')
 print(f'Show the original camera view? {args.setup}')
+print(f'User background subtraction? {args.background_subtract}')
 
 print(f'Make sure the files are all at: {home_address}/pi_to_potter/...')
 
@@ -211,6 +213,7 @@ xEnd = 480;
 
 ret, image_data = cap.read();
 frame_holder = image_data
+frame_no_background = image_data
 frame_holder = frame_holder[yStart:yEnd, xStart:xEnd]
 cv2.flip(frame_holder,1,frame_holder)
 frame = None
@@ -298,12 +301,27 @@ def CheckShape(img):
     else:
         return "error"
 
+def RemoveBackground():
+    """
+    Thread for removing background
+    """
+    global frame_holder, frame_no_background
+
+    fgbg = cv2.createBackgroundSubtractorMOG2()
+    t = threading.currentThread()
+    while getattr(t, "do_run", True):
+        frameCopy = frame_holder.copy()
+
+        # Subtract Background
+        fgmask = fgbg.apply(frameCopy, learningRate=0.001)
+        frame_no_background = cv2.bitwise_and(frameCopy, frameCopy, mask = fgmask)
+        time.sleep(0.01)
+
 def FrameReader():
     global frame_holder
     t = threading.currentThread()
     while getattr(t, "do_run", True):
         ret, image_data = cap.read();
-        #frame = cv2.imdecode(buf, cv2.IMREAD_COLOR)
         frame = image_data[yStart:yEnd, xStart:xEnd]
 
         cv2.flip(frame,1,frame)
@@ -420,8 +438,12 @@ def GetPoints(image):
 
 kernel = np.ones((5,5),np.uint8)
 def ProcessImage():
-    global frame_holder
-    frame = frame_holder.copy()
+    global frame_holder, frame_no_background
+    if args.background_subtract:
+        frame = frame_no_background.copy()
+    else:
+        frame = frame_holder.copy()
+     
     frame_gray = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
     frame_gray = cv2.resize(frame_gray,(5*(xEnd - xStart), 5*(yEnd - yStart)), interpolation = cv2.INTER_CUBIC)
     th, frame_gray = cv2.threshold(frame_gray, 180, 255, cv2.THRESH_BINARY);
@@ -494,6 +516,7 @@ def TrackWand():
                         cv2.imshow("frame_gray", frame_gray)
                         small = cv2.resize(frame, (120, 120), interpolation = cv2.INTER_CUBIC)
                         cv2.imshow("gray", small)
+                        cv2.imshow("frame_no_background", frame_no_background)
                         #cv2.moveWindow("gray", 0, 0);
                         #cv2.moveWindow("frame_gray", 150, 30);
                     else:
@@ -661,6 +684,11 @@ try:
     t = Thread(target=FrameReader)
     t.do_run = True
     t.start()
+
+    tr = Thread(target=RemoveBackground)
+    tr.do_run = True
+    tr.start()
+
     find = Thread(target=FindWand)
     find.do_run = True
     find.start()
@@ -681,10 +709,11 @@ except KeyboardInterrupt:
     print("Shutting down...")
 finally:
     t.do_run = False
+    tr.do_run = False
     find.do_run = False
     t.join()
+    tr.join()
     find.join()
     cv2.destroyAllWindows()
-    #vs.stop()
     sys.exit(1)
 
