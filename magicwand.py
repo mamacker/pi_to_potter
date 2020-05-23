@@ -7,7 +7,6 @@ import numpy as np
 import argparse
 import cv2
 from cv2 import *
-import picamera
 import threading
 from threading import Thread
 from os import listdir
@@ -18,7 +17,7 @@ from gpiozero import LED
 import sys, traceback
 import math
 import time
-import v4l2capture
+#import v4l2capture
 import select
 import requests
 from six.moves.BaseHTTPServer import BaseHTTPRequestHandler,HTTPServer
@@ -27,11 +26,25 @@ from bluepy.btle import Scanner, DefaultDelegate
 import CameraLED
 from six.moves import range
 from six.moves import zip
-camera = CameraLED.CameraLED()
-camera.off();
+from pathlib import Path
 
-digitalLogger = LED(17)
-otherpin = LED(27)
+#Figure out where your code is...
+home_address = str(Path.home())
+print(f'Make sure the files are all at: {home_address}/pi_to_potter/...')
+
+# You might not have this package.
+try:
+    camera = CameraLED.CameraLED()
+    camera.off()
+except:
+    pass
+
+# You might be running on a device that doesn't have GPIOs
+try:
+    digitalLogger = LED(17)
+    otherpin = LED(27)
+except:
+    pass
 
 found = False
 class ScanDelegate(DefaultDelegate):
@@ -131,7 +144,7 @@ def toggleBLE():
     try:
         if bellProcess is not None:
             bellProcess.kill();
-        bellProcess = subprocess.Popen(["/usr/bin/aplay", '/home/pi/pi_to_potter/music/bell.wav']);
+        bellProcess = subprocess.Popen(["/usr/bin/aplay", f'{home_address}/pi_to_potter/music/bell.wav']);
     except:
         print("Exception.")
         None
@@ -159,7 +172,7 @@ print((args.setup))
 # If the file exists, we start in full screen.
 f = None
 try:
-    f = open("/home/pi/pi_to_potter/ready.txt")
+    f = open(f'{home_address}/pi_to_potter/ready.txt')
     # Do something with the file
 except IOError:
     args.setup = True;
@@ -185,24 +198,28 @@ active = False
 # start capturing
 #vs = PiVideoStream().start()
 # Open the video device.
-vs = v4l2capture.Video_device("/dev/video0")
-vs.create_buffers(30)
-vs.queue_all_buffers()
-vs.start()
+#vs = v4l2capture.Video_device("/dev/video0")
+#vs.create_buffers(30)
+#vs.queue_all_buffers()
+#vs.start()
+
+cap = cv2.VideoCapture(0)
 p0 = None #Points holder
 frameMissingPoints = 0 # Current number of frames without points. (After finding a few.)
 
 time.sleep(2.0)
 run_request = True
-select.select((vs,),(),())
 
-yStart = 90;
-yEnd = 170;
-xStart = 110;
-xEnd = 230;
+# Use these to narrow the field of view.
+yStart = 0;
+yEnd = 360;
+xStart = 0;
+xEnd = 480;
 
-image_data = vs.read_and_queue()
-frame_holder = cv2.imdecode(np.frombuffer(image_data, dtype=np.uint8), cv2.IMREAD_COLOR)
+#image_data = vs.read_and_queue()
+ret, image_data = cap.read();
+#frame_holder = cv2.imdecode(np.frombuffer(image_data, dtype=np.uint8), cv2.IMREAD_COLOR)
+frame_holder = image_data
 frame_holder = frame_holder[yStart:yEnd, xStart:xEnd]
 cv2.flip(frame_holder,1,frame_holder)
 
@@ -294,12 +311,12 @@ def FrameReader():
     global frame_holder
     t = threading.currentThread()
     while getattr(t, "do_run", True):
-        select.select((vs,),(),())
-        image_data = vs.read_and_queue()
-        buf = np.frombuffer(image_data, dtype=np.uint8);
+        #select.select((vs,),(),())
+        ret, image_data = cap.read();
+        #buf = np.frombuffer(image_data, dtype=np.uint8);
 
-        frame = cv2.imdecode(buf, cv2.IMREAD_COLOR)
-        frame = frame[yStart:yEnd, xStart:xEnd]
+        #frame = cv2.imdecode(buf, cv2.IMREAD_COLOR)
+        frame = image_data[yStart:yEnd, xStart:xEnd]
 
         cv2.flip(frame,1,frame)
         frame_holder = frame
@@ -311,16 +328,16 @@ def Spell(spell):
     #Invoke IoT (or any other) actions here
     if (spell=="center"):
         os.system('killall mpg321');
-        os.system('mpg321 /home/pi/pi_to_potter/music/reys.mp3 &')
+        os.system(f'mpg321 {home_address}/pi_to_potter/music/reys.mp3 &')
         None
     elif (spell=="circle"):
         os.system('killall mpg321');
         print("Playing audio file...");
-        os.system('mpg321 /home/pi/pi_to_potter/music/audio.mp3 &')
+        os.system(f'mpg321 {home_address}/pi_to_potter/music/audio.mp3 &')
     elif (spell=="eight"):
         print("Togging digital logger.")
-        os.system('killall mpg321');
-        os.system('mpg321 /home/pi/pi_to_potter/music/tinkle.mp3 &')
+        os.system(f'killall mpg321');
+        os.system(f'mpg321 {home_address}/pi_to_potter/music/tinkle.mp3 &')
         digitalLogger.toggle();
         None
     elif (spell=="left"):
@@ -338,22 +355,22 @@ def Spell(spell):
         os.system('killall mpg321');
         os.system('mpg321 /home/pi/pi_to_potter/music/spellshot.mp3 &')
         if (bubblesSwitch):
-            os.system('/home/pi/pi_to_potter/bubbleson.sh');
+            os.system(f'{home_address}/pi_to_potter/bubbleson.sh');
         else:
-            os.system('/home/pi/pi_to_potter/bubblesoff.sh');
+            os.system(f'{home_address}/pi_to_potter/bubblesoff.sh');
         None
     elif (spell=="triangle"):
         print("Toggling outlet.")
         print("Playing audio file...")
         os.system('killall mpg321');
-        os.system('mpg321 /home/pi/pi_to_potter/music/wonder.mp3 &')
+        os.system(f'mpg321 {home_address}/pi_to_potter/music/wonder.mp3 &')
         #URL = "http://localhost:3000/device/t";
         #r = requests.get(url = URL);
     elif (spell=="zee"):
         print("Toggling 'other' pin.")
         print("Playing audio file...")
         os.system('killall mpg321');
-        os.system('mpg321 /home/pi/pi_to_potter/music/zoo.mp3 &')
+        os.system('mpg321 {home_adress}/pi_to_potter/music/zoo.mp3 &')
         None
     print("CAST: %s" %spell)
 
@@ -444,7 +461,7 @@ def FindWand():
                     if audioProcess is not None:
                         audioProcess.kill();
                     try:
-                        audioProcess = subprocess.Popen(["/usr/bin/aplay", '/home/pi/pi_to_potter/music/twinkle.wav']);
+                        audioProcess = subprocess.Popen(["/usr/bin/aplay", f'{home_address}/pi_to_potter/music/twinkle.wav']);
                     except:
                         if audioProcess is not None:
                             audioProcess.kill();
@@ -489,8 +506,8 @@ def TrackWand():
                         cv2.imshow("frame_gray", frame_gray)
                         small = cv2.resize(frame, (120, 120), interpolation = cv2.INTER_CUBIC)
                         cv2.imshow("gray", small)
-                        cv2.moveWindow("gray", 0, 0);
-                        cv2.moveWindow("frame_gray", 150, 30);
+                        #cv2.moveWindow("gray", 0, 0);
+                        #cv2.moveWindow("frame_gray", 150, 30);
                     else:
                         print("No frame.")
 
@@ -517,7 +534,7 @@ def TrackWand():
                         noPt = noPt + 1
                         if noPt > 10:
                             try:
-                                im2, contours, hierarchy = cv2.findContours(line_mask.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
+                                contours, hierarchy = cv2.findContours(line_mask.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
                                 if (contours is not None and len(contours) > 0):
                                     cnt = contours[0]
                                     x,y,w,h = cv2.boundingRect(cnt)
@@ -553,7 +570,7 @@ def TrackWand():
                             cv2.line(line_mask, (a,b),(c,d),(255,255,255), 10)
 
                         if line_mask is not None:
-                            cv2.moveWindow("Raspberry Potter", 0, 200);
+                            #cv2.moveWindow("Raspberry Potter", 0, 200);
                             show_line_mask = cv2.resize(line_mask, (120, 120), interpolation = cv2.INTER_CUBIC)
                             if args.setup is not True:
                                 cv2.namedWindow("Raspberry Potter", cv2.WND_PROP_FULLSCREEN)
@@ -665,6 +682,7 @@ try:
     server.start()
 
     print("START incendio_pin ON and set switch off if video is running")
+    print("Windows will open when there are ponits to see!")
     time.sleep(2)
     TrackWand()
 except KeyboardInterrupt:
@@ -675,6 +693,6 @@ finally:
     t.join()
     find.join()
     cv2.destroyAllWindows()
-    vs.stop()
+    #vs.stop()
     sys.exit(1)
 
