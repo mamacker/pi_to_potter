@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 from __future__ import print_function
-import io
 import numpy as np
 import argparse
 import cv2
@@ -30,6 +29,16 @@ from pathlib import Path
 
 #Figure out where your code is...
 home_address = str(Path.home())
+parser = argparse.ArgumentParser(description='Cast some spells!  Recognize wand motions')
+parser.add_argument('--train', help='Causes wand movement images to be stored for training selection.', action="store_true")
+parser.add_argument('--setup', help='show camera view', action="store_true")
+parser.add_argument('--home', help='The path to your pi_to_potter download.', default=home_address)
+
+args = parser.parse_args()
+
+print((args.train))
+print((args.setup))
+
 print(f'Make sure the files are all at: {home_address}/pi_to_potter/...')
 
 # You might not have this package.
@@ -160,13 +169,6 @@ def toggleBLE():
 
 print("Initializing point tracking")
 
-parser = argparse.ArgumentParser(description='Cast some spells!  Recognize wand motions')
-parser.add_argument('--train', help='Causes wand movement images to be stored for training selection.', action="store_true")
-parser.add_argument('--setup', help='show camera view', action="store_true")
-
-args = parser.parse_args()
-print((args.train))
-print((args.setup))
 
 # This code checks to see if we should start full screen or not.
 # If the file exists, we start in full screen.
@@ -176,7 +178,6 @@ try:
     # Do something with the file
 except IOError:
     args.setup = True;
-    print("File not accessible")
 finally:
     if (f is not None):
         f.close()
