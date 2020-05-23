@@ -16,7 +16,6 @@ from gpiozero import LED
 import sys, traceback
 import math
 import time
-#import v4l2capture
 import select
 import requests
 from six.moves.BaseHTTPServer import BaseHTTPRequestHandler,HTTPServer
@@ -36,8 +35,8 @@ parser.add_argument('--home', help='The path to your pi_to_potter download.', de
 
 args = parser.parse_args()
 
-print((args.train))
-print((args.setup))
+print(f'Perform training? {args.train}')
+print(f'Show the original camera view? {args.setup}')
 
 print(f'Make sure the files are all at: {home_address}/pi_to_potter/...')
 
@@ -196,14 +195,7 @@ movment_threshold = 80
 
 active = False
 
-# start capturing
-#vs = PiVideoStream().start()
-# Open the video device.
-#vs = v4l2capture.Video_device("/dev/video0")
-#vs.create_buffers(30)
-#vs.queue_all_buffers()
-#vs.start()
-
+# Start capturing
 cap = cv2.VideoCapture(0)
 p0 = None #Points holder
 frameMissingPoints = 0 # Current number of frames without points. (After finding a few.)
@@ -217,14 +209,12 @@ yEnd = 360;
 xStart = 0;
 xEnd = 480;
 
-#image_data = vs.read_and_queue()
 ret, image_data = cap.read();
-#frame_holder = cv2.imdecode(np.frombuffer(image_data, dtype=np.uint8), cv2.IMREAD_COLOR)
 frame_holder = image_data
 frame_holder = frame_holder[yStart:yEnd, xStart:xEnd]
 cv2.flip(frame_holder,1,frame_holder)
-
 frame = None
+
 print("About to start.")
 
 knn = None
@@ -312,10 +302,7 @@ def FrameReader():
     global frame_holder
     t = threading.currentThread()
     while getattr(t, "do_run", True):
-        #select.select((vs,),(),())
         ret, image_data = cap.read();
-        #buf = np.frombuffer(image_data, dtype=np.uint8);
-
         #frame = cv2.imdecode(buf, cv2.IMREAD_COLOR)
         frame = image_data[yStart:yEnd, xStart:xEnd]
 
@@ -682,8 +669,12 @@ try:
     server.do_run = True
     server.start()
 
-    print("START incendio_pin ON and set switch off if video is running")
-    print("Windows will open when there are ponits to see!")
+    print("\n\n\n----------------------------------------------------------------------------------\n")
+    print("Windows will open when there are points to see!")
+    print("There should only be white spots corresponding to the wand.  If there are MORE this wont work.")
+    print("Use an IR light source and a reflector, and ensure the camera does not see halogen light,")
+    print("nor sunlight - both are big IR sources.")
+    print("----------------------------------------------------------------------------------\n\n\n\n")
     time.sleep(2)
     TrackWand()
 except KeyboardInterrupt:
