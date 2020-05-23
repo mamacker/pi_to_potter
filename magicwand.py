@@ -646,7 +646,7 @@ class myHandler(BaseHTTPRequestHandler):
             Spell("left");
         if (self.path == "/center"):
             Spell("center");
-        self.wfile.write("{'done':true}")
+        self.wfile.write(bytes("{'done':true}", "utf-8"))
         return
 
 
