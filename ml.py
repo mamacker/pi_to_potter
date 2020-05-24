@@ -61,8 +61,8 @@ def TrainShapes(path_to_pictures) :
     knn.train(shapedArray, cv2.ml.ROW_SAMPLE, np.array(labelIndexes))
 
 lastTrainer = None
-def CheckShape(img):
-    global knn, nameLookup, args, lastTrainer
+def CheckShape(img, args):
+    global knn, nameLookup, lastTrainer
 
     size = (20,20)
     try:

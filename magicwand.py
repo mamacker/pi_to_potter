@@ -92,9 +92,6 @@ frame = None
 print("About to start.")
 
 def RemoveBackground():
-    """
-    Thread for removing background
-    """
     global frame_holder, frame_no_background
 
     fgbg = cv2.createBackgroundSubtractorMOG2()
@@ -181,7 +178,7 @@ def ProcessImage():
         frame = frame_no_background.copy()
     else:
         frame = frame_holder.copy()
-     
+
     frame_gray = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
     frame_gray = cv2.resize(frame_gray,(5*(xEnd - xStart), 5*(yEnd - yStart)), interpolation = cv2.INTER_CUBIC)
     th, frame_gray = cv2.threshold(frame_gray, 180, 255, cv2.THRESH_BINARY);
@@ -276,7 +273,7 @@ def TrackWand():
                                     cnt = contours[0]
                                     x,y,w,h = cv2.boundingRect(cnt)
                                     crop = line_mask[y-10:y+h+10,x-30:x+w+30]
-                                    result = ml.CheckShape(crop);
+                                    result = ml.CheckShape(crop, args);
                                     cv2.putText(line_mask, result, (0,50), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255,255,255))
                                     spells.cast(result)
                                     if line_mask is not None:
