@@ -11,10 +11,7 @@ from threading import Thread
 import os
 import sys
 import traceback
-import math
 import time
-import select
-import requests
 import CameraLED
 from six.moves import range
 from six.moves import zip
@@ -123,7 +120,7 @@ def RemoveBackground():
         fgmask = fgbg.apply(frameCopy, learningRate=0.001)
         frame_no_background = cv2.bitwise_and(
             frameCopy, frameCopy, mask=fgmask)
-        time.sleep(0.01)
+        time.sleep(0.03)
 
 
 def FrameReader():
