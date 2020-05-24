@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 from bluepy import btle
 from bluepy.btle import Scanner, DefaultDelegate
+import music
 
 found = False
 class ScanDelegate(DefaultDelegate):
@@ -83,4 +84,14 @@ def turnOff(characteristic):
     print(str(command))
     characteristic.write(command);
 
-runScanAndSet(False);
+bleState = False;
+def toggleBLE():
+    global bleState;
+    global bellProcess
+    music.play_wav(f'{home_address}/pi_to_potter/music/bell.wav');
+
+    bleState = not bleState;
+    runScanAndSet(bleState);
+    time.sleep(10);
+    music.stop_wav()
+

@@ -8,37 +8,40 @@ import cv2
 from cv2 import *
 import threading
 from threading import Thread
-from os import listdir
 import os
-import subprocess
-from os.path import isfile, join, isdir
-from gpiozero import LED
 import sys, traceback
 import math
 import time
 import select
 import requests
-from six.moves.BaseHTTPServer import BaseHTTPRequestHandler,HTTPServer
-from bluepy import btle
-from bluepy.btle import Scanner, DefaultDelegate
 import CameraLED
 from six.moves import range
 from six.moves import zip
 from pathlib import Path
 
+import music
+import ble
+from spells import Spells
+import server
+import ml
+
+
 #Figure out where your code is...
 home_address = str(Path.home())
 parser = argparse.ArgumentParser(description='Cast some spells!  Recognize wand motions')
 parser.add_argument('--train', help='Causes wand movement images to be stored for training selection.', action="store_true")
-parser.add_argument('--setup', help='show camera view', action="store_true")
+parser.add_argument('--setup', help='show camera view', action="store_true", default=True)
 parser.add_argument('--home', help='The path to your pi_to_potter download.', default=home_address)
 parser.add_argument('--background_subtract', help='User background subtraction', action="store_true")
+parser.add_argument('--use_ble', help='Use the BLE system for spells', action="store_true")
 
 args = parser.parse_args()
 
+spells = Spells(args);
+
 print(f'Perform training? {args.train}')
 print(f'Show the original camera view? {args.setup}')
-print(f'User background subtraction? {args.background_subtract}')
+print(f'Use background subtraction? {args.background_subtract}')
 
 print(f'Make sure the files are all at: {home_address}/pi_to_potter/...')
 
@@ -49,139 +52,7 @@ try:
 except:
     pass
 
-# You might be running on a device that doesn't have GPIOs
-try:
-    digitalLogger = LED(17)
-    otherpin = LED(27)
-except:
-    pass
-
-found = False
-class ScanDelegate(DefaultDelegate):
-    def __init__(self):
-        DefaultDelegate.__init__(self)
-
-    def handleDiscovery(self, dev, isNewDev, isNewData):
-        global found;
-        if isNewDev:
-            print("Discovered device", dev.addr);
-            if (dev.addr == 'ef:26:f1:d5:8a:87'):
-                found = True
-        elif isNewData:
-            print("Received new data from", dev.addr)
-
-scanner = Scanner().withDelegate(ScanDelegate())
-
-failures = 0;
-def runScanAndSet(state):
-    global found;
-    global failures;
-    print("Trying at failure: " + str(failures));
-    found = False;
-    peripheral = None;
-    devices = scanner.scan(3)
-    try:
-        peripheral = btle.Peripheral('ef:26:f1:d5:8a:87', btle.ADDR_TYPE_RANDOM)
-        if (peripheral == None):
-            failures += 1;
-            if (failures < 10):
-                runScanAndSet(state);
-            else:
-                failures = 0;
-            return;
-        failures = 0;
-    except:
-        failures += 1;
-        if (failures < 10):
-            runScanAndSet(state);
-        else:
-            failures = 0;
-        return;
-
-    finally:
-        guid = '713d0003503e4c75ba943148f18d941e'
-        characteristic = peripheral.getCharacteristics(uuid=guid)[0];
-        if (state):
-            turnOn(characteristic);
-            turnOn(characteristic);
-        if (not state):
-            turnOff(characteristic);
-            turnOff(characteristic);
-
-def turnOn(characteristic):
-    # Set Output
-    command = bytearray(3);
-    command[0] = 0x53; #S
-    command[1] = 0x05;
-    command[2] = 0x01;
-
-    print(str(command))
-    characteristic.write(command);
-
-    # Turn on
-    command = bytearray(3);
-    command[0] = 0x54; #T
-    command[1] = 0x05;
-    command[2] = 0x01;
-
-    print(str(command))
-    characteristic.write(command);
-
-def turnOff(characteristic):
-    # Set Output
-    command = bytearray(3);
-    command[0] = 0x53; #S
-    command[1] = 0x05;
-    command[2] = 0x01;
-
-    print(str(command))
-    characteristic.write(command);
-
-    # Turn on
-    command = bytearray(3);
-    command[0] = 0x54; #T
-    command[1] = 0x05;
-    command[2] = 0x00;
-
-    print(str(command))
-    characteristic.write(command);
-
-bleState = False;
-bellProcess = None
-def toggleBLE():
-    global bleState;
-    global bellProcess
-    try:
-        if bellProcess is not None:
-            bellProcess.kill();
-        bellProcess = subprocess.Popen(["/usr/bin/aplay", f'{home_address}/pi_to_potter/music/bell.wav']);
-    except:
-        print("Exception.")
-        None
-    bleState = not bleState;
-    runScanAndSet(bleState);
-    time.sleep(10);
-    try:
-        if bellProcess is not None:
-            bellProcess.kill();
-    except:
-        print("Exception.")
-        None
-
 print("Initializing point tracking")
-
-
-# This code checks to see if we should start full screen or not.
-# If the file exists, we start in full screen.
-f = None
-try:
-    f = open(f'{home_address}/pi_to_potter/ready.txt')
-    # Do something with the file
-except IOError:
-    args.setup = True;
-finally:
-    if (f is not None):
-        f.close()
 
 # get the size of the screen
 width = 800
@@ -220,87 +91,6 @@ frame = None
 
 print("About to start.")
 
-knn = None
-nameLookup = {}
-
-def nearPoints(p1, p2, dist):
-    point2 = p2;
-    if (p2["x"] != None):
-        point2[0] = p2["x"];
-        point2[1] = p2["y"];
-
-    distance = math.sqrt( ((p1[0]-point2[0])**2)+((p1[1]-point2[1])**2) )
-    print("Comparing: " + str(p1[0]) + " " + str(p1[1]) + " " + str(point2[0]) + " " + str(point2[1]) + " distance: " + str(distance));
-    return distance < dist;
-
-def TrainShapes() :
-    global knn, nameLookup
-    labelNames = []
-    labelIndexes = []
-    trainingSet = []
-    numPics = 0
-    dirCount = 0
-    mypath = "./Pictures/"
-    for d in listdir(mypath):
-        if isdir(join(mypath, d)):
-            nameLookup[dirCount] = d
-            dirCount = dirCount + 1
-            for f in listdir(join(mypath,d)):
-                if isfile(join(mypath,d,f)):
-                    labelNames.append(d)
-                    labelIndexes.append(dirCount-1)
-                    trainingSet.append(join(mypath,d,f));
-                    numPics = numPics + 1
-
-    print("Training set...")
-    print(trainingSet)
-
-    print("Labels...")
-    print(labelNames)
-
-    print("Indexes...")
-    print(labelIndexes)
-
-    print("Lookup...")
-    print(nameLookup)
-
-    samples = []
-    for i in range(0, numPics):
-        img = cv2.imread(trainingSet[i])
-        gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-        samples.append(gray);
-        npArray = np.array(samples)
-        shapedArray = npArray.reshape(-1,400).astype(np.float32);
-
-    # Initiate kNN, train the data, then test it with test data for k=1
-    knn = cv2.ml.KNearest_create()
-    knn.train(shapedArray, cv2.ml.ROW_SAMPLE, np.array(labelIndexes))
-
-lastTrainer = None
-def CheckShape(img):
-    global knn, nameLookup, args, lastTrainer
-
-    size = (20,20)
-    try:
-        test_gray = cv2.resize(img,size,interpolation=cv2.INTER_CUBIC)
-    except:
-        return "error"
-
-
-    if args.train and img != lastTrainer:
-        cv2.imwrite("Pictures/char" + str(time.time()) + ".png", test_gray)
-        lastTrainer = img
-    imgArr = np.array(test_gray).astype(np.float32)
-
-    sample = imgArr.reshape(-1,400).astype(np.float32)
-    ret,result,neighbours,dist = knn.findNearest(sample,k=5)
-    print(ret, result, neighbours, dist)
-    if nameLookup[ret] is not None:
-        print("Match: " + nameLookup[ret])
-        return nameLookup[ret]
-    else:
-        return "error"
-
 def RemoveBackground():
     """
     Thread for removing background
@@ -327,58 +117,6 @@ def FrameReader():
         cv2.flip(frame,1,frame)
         frame_holder = frame
         time.sleep(.03);
-
-bubblesSwitch = False;
-def Spell(spell):
-    global bubblesSwitch;
-    #Invoke IoT (or any other) actions here
-    if (spell=="center"):
-        os.system('killall mpg321');
-        os.system(f'mpg321 {home_address}/pi_to_potter/music/reys.mp3 &')
-        None
-    elif (spell=="circle"):
-        os.system('killall mpg321');
-        print("Playing audio file...");
-        os.system(f'mpg321 {home_address}/pi_to_potter/music/audio.mp3 &')
-    elif (spell=="eight"):
-        print("Togging digital logger.")
-        os.system(f'killall mpg321');
-        os.system(f'mpg321 {home_address}/pi_to_potter/music/tinkle.mp3 &')
-        digitalLogger.toggle();
-        None
-    elif (spell=="left"):
-        print("Toggling magic crystal.")
-        toggleBLE();
-        None
-    elif (spell=="square"):
-        None
-        None
-    elif (spell=="swish"):
-        None
-    elif (spell=="tee"):
-        print("Togging bubbles.")
-        bubblesSwitch = not bubblesSwitch;
-        os.system('killall mpg321');
-        os.system('mpg321 /home/pi/pi_to_potter/music/spellshot.mp3 &')
-        if (bubblesSwitch):
-            os.system(f'{home_address}/pi_to_potter/bubbleson.sh');
-        else:
-            os.system(f'{home_address}/pi_to_potter/bubblesoff.sh');
-        None
-    elif (spell=="triangle"):
-        print("Toggling outlet.")
-        print("Playing audio file...")
-        os.system('killall mpg321');
-        os.system(f'mpg321 {home_address}/pi_to_potter/music/wonder.mp3 &')
-        #URL = "http://localhost:3000/device/t";
-        #r = requests.get(url = URL);
-    elif (spell=="zee"):
-        print("Toggling 'other' pin.")
-        print("Playing audio file...")
-        os.system('killall mpg321');
-        os.system('mpg321 {home_adress}/pi_to_potter/music/zoo.mp3 &')
-        None
-    print("CAST: %s" %spell)
 
 point_aging = [];
 def trim_points():
@@ -468,22 +206,9 @@ def FindWand():
                     mask = np.zeros_like(old_frame)
                     line_mask = np.zeros_like(old_gray)
                     run_request = False
-                    if audioProcess is not None:
-                        audioProcess.kill();
-                    try:
-                        audioProcess = subprocess.Popen(["/usr/bin/aplay", f'{home_address}/pi_to_potter/music/twinkle.wav']);
-                    except:
-                        if audioProcess is not None:
-                            audioProcess.kill();
-                            audioProcess = None
+                    music.play_wav(f'{home_address}/pi_to_potter/music/twinkle.wav')
                 else:
-                    if audioProcess is not None:
-                        audioProcess.kill();
-                        audioProcess = None
-                '''
-                else:
-                    cv2.imwrite("nowand/char" + str(time.time()) + ".png", old_frame);
-                '''
+                    music.stop_wav()
                 last = time.time()
 
             time.sleep(.3)
@@ -516,7 +241,8 @@ def TrackWand():
                         cv2.imshow("frame_gray", frame_gray)
                         small = cv2.resize(frame, (120, 120), interpolation = cv2.INTER_CUBIC)
                         cv2.imshow("gray", small)
-                        cv2.imshow("frame_no_background", frame_no_background)
+                        if (args.background_subtract):
+                            cv2.imshow("frame_no_background", frame_no_background)
                         #cv2.moveWindow("gray", 0, 0);
                         #cv2.moveWindow("frame_gray", 150, 30);
                     else:
@@ -550,9 +276,9 @@ def TrackWand():
                                     cnt = contours[0]
                                     x,y,w,h = cv2.boundingRect(cnt)
                                     crop = line_mask[y-10:y+h+10,x-30:x+w+30]
-                                    result = CheckShape(crop);
+                                    result = ml.CheckShape(crop);
                                     cv2.putText(line_mask, result, (0,50), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255,255,255))
-                                    Spell(result)
+                                    spells.cast(result)
                                     if line_mask is not None:
                                         show_line_mask = cv2.resize(line_mask, (120, 120), interpolation = cv2.INTER_CUBIC)
                                         if args.setup is not True:
@@ -634,66 +360,23 @@ def TrackWand():
                 cv2.destroyAllWindows()
                 break
 
-class myHandler(BaseHTTPRequestHandler):
-    #Handler for the GET requests
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header('Content-type','text/html')
-        self.end_headers()
-        # Send the html message
-        if (self.path == "/circle"):
-            Spell("circle");
-        if (self.path == "/square"):
-            Spell("square");
-        if (self.path == "/zee"):
-            Spell("zee");
-        if (self.path == "/eight"):
-            Spell("eight");
-        if (self.path == "/triangle"):
-            Spell("triangle");
-        if (self.path == "/tee"):
-            Spell("tee");
-        if (self.path == "/left"):
-            Spell("left");
-        if (self.path == "/center"):
-            Spell("center");
-        self.wfile.write(bytes("{'done':true}", "utf-8"))
-        return
-
-
-def runServer():
-    import six.moves.SimpleHTTPServer
-    import six.moves.socketserver
-
-    PORT = 8000
-    try:
-        #Create a web server and define the handler to manage the
-        #incoming request
-        server = HTTPServer(('', PORT), myHandler)
-        print('Started httpserver on port ' , PORT)
-
-        #Wait forever for incoming htto requests
-        server.serve_forever()
-
-    except KeyboardInterrupt:
-        print('^C received, shutting down the web server')
-        server.socket.close()
 
 try:
-    TrainShapes()
+    ml.TrainShapes(f'{home_address}/pi_to_potter')
     t = Thread(target=FrameReader)
     t.do_run = True
     t.start()
 
     tr = Thread(target=RemoveBackground)
-    tr.do_run = True
-    tr.start()
+    if args.background_subtract:
+        tr.do_run = True
+        tr.start()
 
     find = Thread(target=FindWand)
     find.do_run = True
     find.start()
 
-    server = Thread(target=runServer)
+    server = Thread(target=server.runServer)
     server.do_run = True
     server.start()
 
@@ -709,10 +392,12 @@ except KeyboardInterrupt:
     print("Shutting down...")
 finally:
     t.do_run = False
-    tr.do_run = False
+    if args.background_subtract:
+        tr.do_run = False
     find.do_run = False
     t.join()
-    tr.join()
+    if args.background_subtract:
+        tr.join()
     find.join()
     cv2.destroyAllWindows()
     sys.exit(1)
