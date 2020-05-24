@@ -4,14 +4,16 @@ import ble
 import music
 
 # You might be running on a device that doesn't have GPIOs
+print("\n\n\nAttempting to use GPIOs - if you don't have any, ignore these exceptions.")
 try:
     digitalLogger = LED(17)
     otherpin = LED(27)
-except:
+except BaseException:
     pass
 
+bubblesSwitch = False
 
-bubblesSwitch = False;
+
 class Spells:
     def __init__(self, args):
         self.args = args
@@ -19,41 +21,42 @@ class Spells:
             ble.runScanAndSet(False)
 
     def cast(self, spell):
-        global bubblesSwitch;
-        #Invoke IoT (or any other) actions here
-        if (spell=="center"):
+        global bubblesSwitch
+        # Invoke IoT (or any other) actions here
+        if (spell == "center"):
             music.play_mp3(f'{self.args.home}/pi_to_potter/music/reys.mp3')
-        elif (spell=="circle"):
+        elif (spell == "circle"):
             music.play_mp3(f'{self.args.home}/pi_to_potter/music/audio.mp3')
-        elif (spell=="eight"):
+        elif (spell == "eight"):
             print("Togging digital logger.")
             music.play_mp3(f'{self.args.home}/pi_to_potter/music/tinkle.mp3')
-            digitalLogger.toggle();
+            digitalLogger.toggle()
             None
-        elif (spell=="left"):
+        elif (spell == "left"):
             print("Toggling magic crystal.")
             if self.args.use_ble:
-                ble.toggleBLE();
-        elif (spell=="square"):
+                ble.toggleBLE()
+        elif (spell == "square"):
             None
-        elif (spell=="swish"):
+        elif (spell == "swish"):
             None
-        elif (spell=="tee"):
+        elif (spell == "tee"):
             print("Togging bubbles.")
-            bubblesSwitch = not bubblesSwitch;
-            music.play_mp3(f'{self.args.home}/pi_to_potter/music/spellshot.mp3')
+            bubblesSwitch = not bubblesSwitch
+            music.play_mp3(
+                f'{self.args.home}/pi_to_potter/music/spellshot.mp3')
             if (bubblesSwitch):
-                os.system(f'{self.args.home}/pi_to_potter/bubbleson.sh');
+                os.system(f'{self.args.home}/pi_to_potter/bubbleson.sh')
             else:
-                os.system(f'{self.args.home}/pi_to_potter/bubblesoff.sh');
+                os.system(f'{self.args.home}/pi_to_potter/bubblesoff.sh')
             None
-        elif (spell=="triangle"):
+        elif (spell == "triangle"):
             print("Toggling outlet.")
             print("Playing audio file...")
             music.play_mp3(f'{self.args.home}/pi_to_potter/music/wonder.mp3')
-        elif (spell=="zee"):
+        elif (spell == "zee"):
             print("Toggling 'other' pin.")
             print("Playing audio file...")
             music.play_mp3(f'{self.args.home}/pi_to_potter/music/zoo.mp3')
             None
-        print("CAST: %s" %spell)
+        print("CAST: %s" % spell)
