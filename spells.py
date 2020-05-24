@@ -22,12 +22,12 @@ class Spells:
         global bubblesSwitch;
         #Invoke IoT (or any other) actions here
         if (spell=="center"):
-            music.play_mp3(f'{self.args.home_address}/pi_to_potter/music/reys.mp3')
+            music.play_mp3(f'{self.args.home}/pi_to_potter/music/reys.mp3')
         elif (spell=="circle"):
-            music.play_mp3(f'{self.args.home_address}/pi_to_potter/music/audio.mp3')
+            music.play_mp3(f'{self.args.home}/pi_to_potter/music/audio.mp3')
         elif (spell=="eight"):
             print("Togging digital logger.")
-            music.play_mp3(f'{self.args.home_address}/pi_to_potter/music/tinkle.mp3')
+            music.play_mp3(f'{self.args.home}/pi_to_potter/music/tinkle.mp3')
             digitalLogger.toggle();
             None
         elif (spell=="left"):
@@ -41,19 +41,19 @@ class Spells:
         elif (spell=="tee"):
             print("Togging bubbles.")
             bubblesSwitch = not bubblesSwitch;
-            music.play_mp3(f'{self.args.home_address}/pi_to_potter/music/spellshot.mp3')
+            music.play_mp3(f'{self.args.home}/pi_to_potter/music/spellshot.mp3')
             if (bubblesSwitch):
-                os.system(f'{self.args.home_address}/pi_to_potter/bubbleson.sh');
+                os.system(f'{self.args.home}/pi_to_potter/bubbleson.sh');
             else:
-                os.system(f'{self.args.home_address}/pi_to_potter/bubblesoff.sh');
+                os.system(f'{self.args.home}/pi_to_potter/bubblesoff.sh');
             None
         elif (spell=="triangle"):
             print("Toggling outlet.")
             print("Playing audio file...")
-            music.play_mp3(f'{self.args.home_address}/pi_to_potter/music/wonder.mp3')
+            music.play_mp3(f'{self.args.home}/pi_to_potter/music/wonder.mp3')
         elif (spell=="zee"):
             print("Toggling 'other' pin.")
             print("Playing audio file...")
-            music.play_mp3(f'{self.args.home_address}/pi_to_potter/music/zoo.mp3')
+            music.play_mp3(f'{self.args.home}/pi_to_potter/music/zoo.mp3')
             None
         print("CAST: %s" %spell)
