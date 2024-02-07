@@ -16,8 +16,8 @@ sudo apt-get install -y libavcodec-dev libavformat-dev libswscale-dev libv4l-dev
 sudo apt-get install -y libxvidcore-dev libx264-dev
 sudo apt-get install -y libgtk2.0-dev
 sudo apt-get install -y libatlas-base-dev gfortran
-sudo apt install -y libpango-1.0-0 libatk1.0-0 libcairo-gobject2 libpangocairo-1.0-0 libqt4-test libtiff5 libqtcore4 libqtgui4 libgdk-pixbuf2.0-0 libgtk-3-0 libjasper1 libcairo2
-#sudo apt install -y libpango-1.0-0 libatk1.0-0 libcairo-gobject2 libpangocairo-1.0-0 libqt4-test libtiff5 libqtcore4 libwebp6 libavcodec58 libavutil56 libqtgui4 libavformat58 libgdk-pixbuf2.0-0 libgtk-3-0 libilmbase23 libjasper1 libcairo2 libswscale5 libopenexr23 
+# works with RPI OS: Kernel version: 6.1, Debian version: 12 (bookworm)
+sudo apt install -y libpango-1.0-0 libatk1.0-0 libcairo-gobject2 libpangocairo-1.0-0 libtiff5 libqt5core5a libqt5gui5 libgdk-pixbuf2.0-0 libgtk-3-0 libjasper1 libcairo2
 
 cd ~/
 sudo pip3 install numpy
